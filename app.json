@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "financas-app",
+    "name": "Finanças",
     "slug": "financas-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,15 +11,23 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#3b6fb5"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.gabi.financasapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite",
+      "@react-native-community/datetimepicker",
+      "expo-sharing"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5ce82527-43be-4d56-ba02-c608ad1ab9a6"
+      }
     }
   }
 }
