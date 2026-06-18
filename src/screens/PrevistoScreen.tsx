@@ -30,7 +30,7 @@ export function PrevistoScreen({ onEditTemplate }: Props) {
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <Text style={[s.title, { color: t.txt }]}>Saldo Previsto</Text>
-      <ScrollView contentContainerStyle={s.list}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={s.list} keyboardShouldPersistTaps="handled">
         {cards.map((c) => (
           <CardPeriodo key={c.key} titulo={c.titulo} entrada={c.e} despesa={c.d} saldo={c.s}
             pagoLabel="Reservado" pago={c.p} pendente={c.r}

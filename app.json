@@ -14,7 +14,8 @@
         "backgroundColor": "#3b6fb5"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.gabi.financasapp"
+      "package": "com.gabi.financasapp",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/favicon.png"

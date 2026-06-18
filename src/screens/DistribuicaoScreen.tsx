@@ -25,7 +25,7 @@ export function DistribuicaoScreen({ onEditTemplate }: Props) {
       <Text style={[s.title, { color: t.txt }]}>Distribuição</Text>
 
       {/* Lista rolável */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={s.list}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={s.list} keyboardShouldPersistTaps="handled">
         {isPast && (
           <View style={[s.histBox, { backgroundColor: t.chipA.bg }]}>
             <Text style={{ fontSize: 11, color: t.chipA.txt }}>

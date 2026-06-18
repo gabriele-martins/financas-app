@@ -6,7 +6,7 @@
 import React, { useState } from "react";
 import {
   View, Text, Pressable, ActivityIndicator, StatusBar,
-  Platform, UIManager, StyleSheet,
+  Platform, UIManager, StyleSheet, KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { ThemeProvider, useTheme } from "./src/theme/ThemeContext";
@@ -112,7 +112,11 @@ function Shell() {
         </View>
 
         {/* ── Conteúdo ── */}
-        <View style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={0}
+        >
           {form.open ? (
             <EntradaFormScreen editing={form.editing} onDone={fecharForm} />
           ) : tab === "distribuicao" ? (
@@ -122,7 +126,7 @@ function Shell() {
           ) : (
             <RealizadoScreen />
           )}
-        </View>
+        </KeyboardAvoidingView>
       </View>
 
       <SideMenu visible={menu} onClose={() => setMenu(false)} onDataChanged={reload} />

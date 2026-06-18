@@ -94,7 +94,7 @@ export function EntradaFormScreen({ editing, onDone }: Props) {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <ScrollView contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
         <Text style={{ fontSize: 18, fontWeight: "700", color: t.txt, marginBottom: 16 }}>
           {editing ? (tipo === "despesa" ? "Editar despesa" : "Editar receita") : "Entrada"}
         </Text>

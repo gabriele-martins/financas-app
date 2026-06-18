@@ -26,7 +26,7 @@ export function RealizadoScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <Text style={[s.title, { color: t.txt }]}>Saldo Atual</Text>
-      <ScrollView contentContainerStyle={s.list}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={s.list} keyboardShouldPersistTaps="handled">
         {cards.map((c) => {
           const itens = receitas.filter((e) => e.periodo === c.key);
           return (
