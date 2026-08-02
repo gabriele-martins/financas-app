@@ -8,7 +8,7 @@ import { Template, Tipo, Periodo, Recurrence } from "./types";
 
 const HEADERS = [
   "tipo", "nome", "icone", "valor", "dia",
-  "start_month_key", "periodo", "dist_a", "dist_s", "recurrence",
+  "start_month_key", "periodo", "dist_a", "dist_s", "recurrence", "fixo",
 ];
 
 /** Escapa um campo CSV: aspas duplas e vírgulas exigem envolver em aspas */
@@ -36,6 +36,7 @@ export function templatesToCSV(templates: Template[]): string {
       esc(t.distA),
       esc(t.distS),
       esc(t.recurrence ? JSON.stringify(t.recurrence) : ""),
+      esc(t.fixo === false ? "0" : "1"),
     ].join(","));
   }
   return linhas.join("\n");
@@ -108,6 +109,7 @@ export function csvToTemplates(csv: string): Omit<Template, "id">[] {
     } else {
       base.distA = parseFloat(get("dist_a")) || 0;
       base.distS = parseFloat(get("dist_s")) || 0;
+      base.fixo = get("fixo") !== "0";
     }
 
     out.push(base);

@@ -42,6 +42,7 @@ export function resolveDespesas(
       distS: instValue(instances, monthKey, t.id, "distS", t.distS ?? 0),
       pagoA: instValue(instances, monthKey, t.id, "pagoA", false),
       pagoS: instValue(instances, monthKey, t.id, "pagoS", false),
+      fixo: t.fixo ?? true,
     }));
 }
 

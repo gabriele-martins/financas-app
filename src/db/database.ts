@@ -28,6 +28,14 @@ export function getDb(): Promise<SQLite.SQLiteDatabase> {
     // — execAsync aceita isso, mas se der problema, ver nota abaixo.
     await db.execAsync(CREATE_TABLES);
 
+    // Migração aditiva: bancos já instalados não recriam a tabela (CREATE TABLE
+    // IF NOT EXISTS não adiciona colunas). Tenta o ALTER e ignora se já existe.
+    try {
+      await db.execAsync("ALTER TABLE templates ADD COLUMN fixo INTEGER NOT NULL DEFAULT 1");
+    } catch {
+      // coluna já existe — ok
+    }
+
     // Seed só se a tabela estiver vazia
     // const row = await db.getFirstAsync<{ n: number }>(
     //   "SELECT COUNT(*) AS n FROM templates"
@@ -48,8 +56,8 @@ async function seedDatabase(db: SQLite.SQLiteDatabase): Promise<void> {
   for (const r of rows) {
     await db.runAsync(
       `INSERT INTO templates
-         (tipo, nome, icone, valor, dia, start_month_key, recurrence, periodo, dist_a, dist_s)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (tipo, nome, icone, valor, dia, start_month_key, recurrence, periodo, dist_a, dist_s, fixo)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         r.tipo,
         r.nome,
@@ -61,6 +69,7 @@ async function seedDatabase(db: SQLite.SQLiteDatabase): Promise<void> {
         r.periodo ?? null,
         r.dist_a ?? null,
         r.dist_s ?? null,
+        r.fixo ?? 1,
       ]
     );
   }

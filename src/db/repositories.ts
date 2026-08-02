@@ -23,6 +23,7 @@ interface TemplateRow {
   periodo: string | null;
   dist_a: number | null;
   dist_s: number | null;
+  fixo: number;
 }
 
 interface InstanceRow {
@@ -51,6 +52,7 @@ function rowToTemplate(r: TemplateRow): Template {
     periodo: (r.periodo as Periodo) ?? undefined,
     distA: r.dist_a ?? undefined,
     distS: r.dist_s ?? undefined,
+    fixo: r.fixo === 1,
   };
 }
 
@@ -81,8 +83,8 @@ export async function insertTemplate(t: Omit<Template, "id">): Promise<number> {
   const db = await getDb();
   const res = await db.runAsync(
     `INSERT INTO templates
-       (tipo, nome, icone, valor, dia, start_month_key, recurrence, periodo, dist_a, dist_s)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (tipo, nome, icone, valor, dia, start_month_key, recurrence, periodo, dist_a, dist_s, fixo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       t.tipo ?? "despesa",
       t.nome ?? "",
@@ -94,6 +96,7 @@ export async function insertTemplate(t: Omit<Template, "id">): Promise<number> {
       t.periodo ?? null,
       t.distA ?? null,
       t.distS ?? null,
+      t.fixo === false ? 0 : 1,
     ]
   );
   return res.lastInsertRowId;
@@ -104,7 +107,7 @@ export async function updateTemplate(t: Template): Promise<void> {
   await db.runAsync(
     `UPDATE templates SET
        tipo = ?, nome = ?, icone = ?, valor = ?, dia = ?,
-       start_month_key = ?, recurrence = ?, periodo = ?, dist_a = ?, dist_s = ?
+       start_month_key = ?, recurrence = ?, periodo = ?, dist_a = ?, dist_s = ?, fixo = ?
      WHERE id = ?`,
     [
       t.tipo ?? "despesa",
@@ -117,6 +120,7 @@ export async function updateTemplate(t: Template): Promise<void> {
       t.periodo ?? null,
       t.distA ?? null,
       t.distS ?? null,
+      t.fixo === false ? 0 : 1,
       t.id,
     ]
   );

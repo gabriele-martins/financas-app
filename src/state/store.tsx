@@ -42,6 +42,7 @@ interface StoreValue {
   editarDistribuicao: (templateId: number, lado: "distA" | "distS", valor: number) => Promise<void>;
   alternarPago: (templateId: number, campo: "pagoA" | "pagoS") => Promise<void>;
   editarValorReal: (templateId: number, valor: number) => Promise<void>;
+  editarValorDespesa: (templateId: number, valor: number) => Promise<void>;
 
   reload: () => Promise<void>;
 }
@@ -179,13 +180,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [isPast, applyOverride]
   );
 
+  const editarValorDespesa = useCallback(
+    async (templateId: number, novoValor: number) => {
+      if (isPast) return;
+      const d = despesas.find((x) => x.id === templateId);
+      if (!d) return;
+      const ratio = d.valor > 0 ? d.distA / d.valor : 0;
+      const novoA = +(novoValor * ratio).toFixed(2);
+      const novoS = +(novoValor - novoA).toFixed(2);
+      await applyOverride(templateId, { valor: novoValor, distA: novoA, distS: novoS });
+    },
+    [isPast, despesas, applyOverride]
+  );
+
   const value: StoreValue = {
     loading,
     viewY, viewM, monthKey, isPast, goMonth,
     templates,
     despesas, receitas, totais,
     criarTemplate, editarTemplate, excluirTemplate,
-    editarDistribuicao, alternarPago, editarValorReal,
+    editarDistribuicao, alternarPago, editarValorReal, editarValorDespesa,
     reload: carregar,
   };
 
