@@ -12,10 +12,13 @@ Organiza despesas e receitas em torno dos dois recebimentos mensais — **adiant
 
 - **Controle quinzenal** — cada mês é dividido em adiantamento e salário, com saldos independentes.
 - **Distribuição de despesas** — divide cada conta entre os dois períodos; editar um lado recalcula o outro automaticamente.
+- **Despesas fixas ou variáveis** — contas de valor variável (ex: energia) podem ter o "Valor real" ajustado mês a mês direto na tela Distribuição, sem alterar o cadastro (template); a distribuição A/S recalcula automaticamente.
 - **Template + instância** — despesas/receitas recorrentes geram cópias mensais; editar afeta o mês atual em diante, preservando o histórico do passado (read-only).
 - **Recorrência flexível** — diária, semanal, mensal ou anual, com intervalo, dias da semana, dia fixo/posição e condição de término (modelo RRULE-like).
 - **Saldo previsto × atual** — compare o planejado com o que foi efetivamente recebido.
+- **Simulação de pagamento** — marque despesas em checkbox, filtre por Adiantamento/Salário/Ambos e veja a soma das marcadas e a diferença com a receita, sem alterar nada salvo.
 - **Marcar pagamentos** em poucos toques (pago/pendente por período).
+- **Campos de valor estilo "caixa eletrônico"** — dígitos entram pela direita, formatação automática, sem estados inválidos de digitação.
 - **Temas claro e escuro** — paleta azul, com verde/vermelho reservados a valores financeiros.
 - **Backup em CSV** — exportar (compartilhar via Drive, e-mail, etc.) e importar.
 - **100% offline** — todos os dados ficam no dispositivo (SQLite).
@@ -43,8 +46,8 @@ src/
 ├── db/          # persistência: schema, conexão SQLite, repositórios, backup
 ├── theme/       # tokens de cor (light/dark) + contexto de tema
 ├── state/       # estado global (Context): carrega o banco, orquestra recálculo
-├── components/  # peças reutilizáveis (cards, campos, pickers, modais)
-└── screens/     # telas: Distribuição, Saldo Previsto, Saldo Atual, Formulário
+├── components/  # peças reutilizáveis (cards, campos, pickers, modais, input de moeda)
+└── screens/     # telas: Distribuição, Saldo Previsto, Saldo Atual, Simulação, Formulário
 App.tsx          # shell: providers + header + navegação + telas
 ```
 

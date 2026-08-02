@@ -4,9 +4,10 @@
 // ════════════════════════════════════════════════
 
 import React, { useState } from "react";
-import { Pressable, TextInput, Text, View, StyleSheet } from "react-native";
+import { Pressable, Text, View, StyleSheet } from "react-native";
 import { useTheme } from "../theme/ThemeContext";
-import { formatBRL, parseBRL } from "../core/finance";
+import { formatBRL } from "../core/finance";
+import { InputMoeda } from "./InputMoeda";
 
 interface Props {
   valor: number;
@@ -18,10 +19,10 @@ interface Props {
 export function CampoDist({ valor, label, disabled, onChange }: Props) {
   const { t } = useTheme();
   const [editing, setEditing] = useState(false);
-  const [text, setText] = useState("");
+  const [temp, setTemp] = useState(0);
 
   const confirm = () => {
-    onChange(parseBRL(text));
+    onChange(temp);
     setEditing(false);
   };
 
@@ -35,23 +36,20 @@ export function CampoDist({ valor, label, disabled, onChange }: Props) {
 
   if (editing) {
     return (
-      <TextInput
+      <InputMoeda
         autoFocus
-        keyboardType="decimal-pad"
-        value={text}
-        placeholder={valor.toFixed(2).replace(".", ",")}
-        placeholderTextColor={t.txtHint}
-        onChangeText={setText}
-        onSubmitEditing={confirm}
-        onBlur={confirm}
-        style={[s.box, s.input, { borderColor: t.accent, color: t.txt, backgroundColor: t.inputBg }]}
+        valor={temp}
+        onChange={setTemp}
+        onBlurConfirm={confirm}
+        prefixColor={t.txt}
+        style={[s.box, s.input, { borderColor: t.accent, backgroundColor: t.inputBg }]}
       />
     );
   }
 
   return (
     <Pressable
-      onPress={() => { setText(valor.toFixed(2).replace(".", ",")); setEditing(true); }}
+      onPress={() => { setTemp(valor); setEditing(true); }}
       style={[s.box, { backgroundColor: t.surfaceAlt, borderColor: t.border }]}
     >
       <Text style={[s.lbl, { color: t.txtHint }]}>{label} ✎</Text>

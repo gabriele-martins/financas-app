@@ -16,6 +16,7 @@ import { SideMenu } from "./src/components/SideMenu";
 import { DistribuicaoScreen } from "./src/screens/DistribuicaoScreen";
 import { PrevistoScreen } from "./src/screens/PrevistoScreen";
 import { RealizadoScreen } from "./src/screens/RealizadoScreen";
+import { SimulacaoScreen } from "./src/screens/SimulacaoScreen";
 import { EntradaFormScreen } from "./src/screens/EntradaFormScreen";
 import { formatBRL } from "./src/core/finance";
 import { MONTH_NAMES } from "./src/core/date";
@@ -26,11 +27,12 @@ if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-type Tab = "distribuicao" | "previsto" | "realizado";
+type Tab = "distribuicao" | "previsto" | "realizado" | "simulacao";
 const TABS: { key: Tab; icon: string }[] = [
   { key: "distribuicao", icon: "grid" },
   { key: "previsto", icon: "list" },
   { key: "realizado", icon: "check" },
+  { key: "simulacao", icon: "cash" },
 ];
 
 function Shell() {
@@ -119,8 +121,10 @@ function Shell() {
             <DistribuicaoScreen onEditTemplate={abrirEdicao} />
           ) : tab === "previsto" ? (
             <PrevistoScreen onEditTemplate={abrirEdicao} />
-          ) : (
+          ) : tab === "realizado" ? (
             <RealizadoScreen />
+          ) : (
+            <SimulacaoScreen />
           )}
         </View>
       </View>

@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS templates (
   periodo         TEXT    CHECK (periodo IN ('A','S')),  -- só receita
   dist_a          REAL,                        -- só despesa
   dist_s          REAL,                        -- só despesa
+  fixo            INTEGER NOT NULL DEFAULT 1,   -- só despesa: 1=fixo, 0=variável
   created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -61,14 +62,14 @@ export const SEED = (startMonthKey: string) => {
 
   return [
     // Receitas
-    { tipo: "receita", nome: "Adiantamento", icone: "cash", valor: 1767.52, dia: 15, periodo: "A", dist_a: null, dist_s: null, recurrence: m(15) },
-    { tipo: "receita", nome: "Salário",      icone: "cash", valor: 2217.12, dia: 30, periodo: "S", dist_a: null, dist_s: null, recurrence: m(30) },
+    { tipo: "receita", nome: "Adiantamento", icone: "cash", valor: 1767.52, dia: 15, periodo: "A", dist_a: null, dist_s: null, recurrence: m(15), fixo: 1 },
+    { tipo: "receita", nome: "Salário",      icone: "cash", valor: 2217.12, dia: 30, periodo: "S", dist_a: null, dist_s: null, recurrence: m(30), fixo: 1 },
     // Despesas
-    { tipo: "despesa", nome: "Aluguel",  icone: "home",    valor: 1100,  dia: 10, periodo: null, dist_a: 700, dist_s: 400,   recurrence: m(10) },
-    { tipo: "despesa", nome: "Vivo",     icone: "phone2",  valor: 120,   dia: 18, periodo: null, dist_a: 120, dist_s: 0,     recurrence: m(18) },
-    { tipo: "despesa", nome: "Unimed",   icone: "health",  valor: 380,   dia: 5,  periodo: null, dist_a: 0,   dist_s: 380,   recurrence: m(5) },
-    { tipo: "despesa", nome: "SmartFit", icone: "fitness", valor: 119.9, dia: 7,  periodo: null, dist_a: 0,   dist_s: 119.9, recurrence: m(7) },
-    { tipo: "despesa", nome: "Luz",      icone: "bulb",    valor: 180,   dia: 20, periodo: null, dist_a: 60,  dist_s: 120,   recurrence: m(20) },
-    { tipo: "despesa", nome: "HBO",      icone: "movie",   valor: 34.9,  dia: 12, periodo: null, dist_a: 0,   dist_s: 34.9,  recurrence: m(12) },
+    { tipo: "despesa", nome: "Aluguel",  icone: "home",    valor: 1100,  dia: 10, periodo: null, dist_a: 700, dist_s: 400,   recurrence: m(10), fixo: 1 },
+    { tipo: "despesa", nome: "Vivo",     icone: "phone2",  valor: 120,   dia: 18, periodo: null, dist_a: 120, dist_s: 0,     recurrence: m(18), fixo: 1 },
+    { tipo: "despesa", nome: "Unimed",   icone: "health",  valor: 380,   dia: 5,  periodo: null, dist_a: 0,   dist_s: 380,   recurrence: m(5),  fixo: 1 },
+    { tipo: "despesa", nome: "SmartFit", icone: "fitness", valor: 119.9, dia: 7,  periodo: null, dist_a: 0,   dist_s: 119.9, recurrence: m(7),  fixo: 1 },
+    { tipo: "despesa", nome: "Luz",      icone: "bulb",    valor: 180,   dia: 20, periodo: null, dist_a: 60,  dist_s: 120,   recurrence: m(20), fixo: 0 },
+    { tipo: "despesa", nome: "HBO",      icone: "movie",   valor: 34.9,  dia: 12, periodo: null, dist_a: 0,   dist_s: 34.9,  recurrence: m(12), fixo: 1 },
   ].map((r) => ({ ...r, start_month_key: startMonthKey }));
 };

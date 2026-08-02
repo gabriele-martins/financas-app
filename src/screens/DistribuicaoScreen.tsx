@@ -17,7 +17,7 @@ interface Props {
 
 export function DistribuicaoScreen({ onEditTemplate }: Props) {
   const { t } = useTheme();
-  const { despesas, totais, isPast, editarDistribuicao, alternarPago } = useStore();
+  const { despesas, totais, isPast, editarDistribuicao, alternarPago, editarValorDespesa } = useStore();
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   return (
@@ -43,6 +43,7 @@ export function DistribuicaoScreen({ onEditTemplate }: Props) {
             onToggle={() => setExpandedId(expandedId === d.id ? null : d.id)}
             onEditDist={(lado, v) => editarDistribuicao(d.id, lado, v)}
             onTogglePago={(campo) => alternarPago(d.id, campo)}
+            onEditValor={(v) => editarValorDespesa(d.id, v)}
             onEditTemplate={() => onEditTemplate(d.id)}
           />
         ))}

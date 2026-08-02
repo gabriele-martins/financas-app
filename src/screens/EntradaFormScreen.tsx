@@ -13,8 +13,8 @@ import { Icon, IconName } from "../components/Icon";
 import { IconModal } from "../components/IconModal";
 import { DistPicker } from "../components/DistPicker";
 import { RecurrencePicker } from "../components/RecurrencePicker";
+import { InputMoeda } from "../components/InputMoeda";
 import { Tipo, Template, Recurrence } from "../core/types";
-import { parseBRL } from "../core/finance";
 import { DEFAULT_RULE, monthlyRule } from "../core/recurrence";
 import { periodoByDay, mKey, pad, CUR_YEAR, CUR_MONTH } from "../core/date";
 
@@ -30,22 +30,22 @@ export function EntradaFormScreen({ editing, onDone }: Props) {
 
   const [tipo, setTipo] = useState<Tipo>(editing?.tipo ?? "despesa");
   const [nome, setNome] = useState(editing?.nome ?? "");
-  const [valor, setValor] = useState(editing ? editing.valor.toFixed(2).replace(".", ",") : "");
+  const [valor, setValor] = useState(editing?.valor ?? 0);
   const [icone, setIcone] = useState<string>(editing?.icone ?? "cash");
   const [data, setData] = useState<Date>(editing ? new Date(CUR_YEAR, CUR_MONTH - 1, editing.dia) : new Date());
   const [showDate, setShowDate] = useState(false);
   const [rec, setRec] = useState<Recurrence | null>(editing?.recurrence ?? monthlyRule(new Date().getDate()));
   const [distA, setDistA] = useState(editing?.distA ?? 0);
   const [distS, setDistS] = useState(editing?.distS ?? 0);
+  const [fixo, setFixo] = useState(editing?.fixo ?? true);
   const [iconModal, setIconModal] = useState(false);
 
   const dia = data.getDate();
-  const v = parseBRL(valor);
+  const v = valor;
 
-  const onValorChange = (raw: string) => {
-    setValor(raw);
+  const onValorChange = (nv: number) => {
+    setValor(nv);
     if (tipo === "despesa") {
-      const nv = parseBRL(raw);
       const ratio = editing && editing.valor > 0 ? distA / editing.valor : 0;
       const a = +(nv * ratio).toFixed(2);
       setDistA(a); setDistS(+(nv - a).toFixed(2));
@@ -72,8 +72,8 @@ export function EntradaFormScreen({ editing, onDone }: Props) {
         ...editing, tipo, nome: nome.trim(), icone, valor: v, dia,
         recurrence: ruleFinal,
         ...(tipo === "despesa"
-          ? { distA, distS, periodo: undefined }
-          : { periodo: periodoByDay(dia), distA: undefined, distS: undefined }),
+          ? { distA, distS, fixo, periodo: undefined }
+          : { periodo: periodoByDay(dia), distA: undefined, distS: undefined, fixo: undefined }),
       };
       editarTemplate(upd);
     } else {
@@ -81,7 +81,7 @@ export function EntradaFormScreen({ editing, onDone }: Props) {
         tipo, nome: nome.trim(), icone, valor: v, dia,
         startMonthKey: monthKey, recurrence: ruleFinal,
         ...(tipo === "despesa"
-          ? { distA, distS }
+          ? { distA, distS, fixo }
           : { periodo: periodoByDay(dia) }),
       });
     }
@@ -126,9 +126,9 @@ export function EntradaFormScreen({ editing, onDone }: Props) {
         </View>
 
         {/* Valor */}
-        <Lbl>Valor (R$)</Lbl>
-        <TextInput style={[inp, { marginBottom: 16 }]} keyboardType="decimal-pad"
-          value={valor} onChangeText={onValorChange} placeholder="0,00" placeholderTextColor={t.txtHint} />
+        <Lbl>Valor</Lbl>
+        <InputMoeda style={[inp, { marginBottom: 16 }]}
+          prefixColor={t.txt} valor={valor} onChange={onValorChange} />
 
         {/* Data */}
         <Lbl>{tipo === "despesa" ? "Data de vencimento" : "Data de recebimento"}</Lbl>
@@ -149,6 +149,19 @@ export function EntradaFormScreen({ editing, onDone }: Props) {
             <View style={{ marginBottom: 16 }}>
               <DistPicker total={v} distA={distA} distS={distS}
                 onChange={(a, sd) => { setDistA(a); setDistS(sd); }} />
+            </View>
+
+            <Lbl>Tipo de valor</Lbl>
+            <View style={[s.seg, { backgroundColor: t.surfaceAlt }]}>
+              {([[true, "Fixo"], [false, "Variável"]] as const).map(([k, l]) => {
+                const on = fixo === k;
+                return (
+                  <Pressable key={String(k)} onPress={() => setFixo(k)}
+                    style={[s.segBtn, { backgroundColor: on ? t.surface : "transparent" }]}>
+                    <Text style={{ fontSize: 13, fontWeight: "600", color: on ? t.accent : t.txtSub }}>{l}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </>
         )}

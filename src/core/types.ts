@@ -57,6 +57,8 @@ export interface Template {
   // Só para despesas (distribuição padrão do template):
   distA?: number;
   distS?: number;
+  /** Só para despesas: false = variável (valor pode ser ajustado por mês na Distribuição). Default true. */
+  fixo?: boolean;
 }
 
 // ── Instância (override de um template em um mês específico) ──
@@ -85,6 +87,7 @@ export interface DespesaResolvida extends Template {
   distS: number;
   pagoA: boolean;
   pagoS: boolean;
+  fixo: boolean;
 }
 
 export interface ReceitaResolvida extends Template {

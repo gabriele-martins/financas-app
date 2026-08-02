@@ -4,9 +4,10 @@
 // ════════════════════════════════════════════════
 
 import React, { useState } from "react";
-import { Pressable, TextInput, Text, StyleSheet } from "react-native";
+import { Pressable, Text, StyleSheet } from "react-native";
 import { useTheme } from "../theme/ThemeContext";
-import { formatBRL, parseBRL } from "../core/finance";
+import { formatBRL } from "../core/finance";
+import { InputMoeda } from "./InputMoeda";
 
 interface Props {
   valor: number;
@@ -16,30 +17,29 @@ interface Props {
 export function CampoEdit({ valor, onChange }: Props) {
   const { t } = useTheme();
   const [editing, setEditing] = useState(false);
-  const [text, setText] = useState("");
+  const [temp, setTemp] = useState(0);
 
   const confirm = () => {
-    onChange(parseBRL(text));
+    onChange(temp);
     setEditing(false);
   };
 
   if (editing) {
     return (
-      <TextInput
+      <InputMoeda
         autoFocus
-        keyboardType="decimal-pad"
-        value={text}
-        onChangeText={setText}
-        onSubmitEditing={confirm}
-        onBlur={confirm}
-        style={[s.input, { borderColor: t.accent, color: t.txt, backgroundColor: t.inputBg }]}
+        valor={temp}
+        onChange={setTemp}
+        onBlurConfirm={confirm}
+        prefixColor={t.txt}
+        style={[s.input, { borderColor: t.accent, backgroundColor: t.inputBg }]}
       />
     );
   }
 
   return (
     <Pressable
-      onPress={() => { setText(valor.toFixed(2).replace(".", ",")); setEditing(true); }}
+      onPress={() => { setTemp(valor); setEditing(true); }}
       style={[s.btn, { borderColor: t.border }]}
     >
       <Text style={{ fontSize: 13, fontWeight: "600", color: t.incomeC }}>

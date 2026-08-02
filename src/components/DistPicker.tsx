@@ -5,9 +5,9 @@
 // ════════════════════════════════════════════════
 
 import React from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { useTheme } from "../theme/ThemeContext";
-import { parseBRL } from "../core/finance";
+import { InputMoeda } from "./InputMoeda";
 
 interface Props {
   total: number;
@@ -19,21 +19,21 @@ interface Props {
 export function DistPicker({ total, distA, distS, onChange }: Props) {
   const { t } = useTheme();
 
-  const handle = (lado: "A" | "S", raw: string) => {
-    const v = Math.max(0, Math.min(parseBRL(raw), total));
-    const outro = +(total - v).toFixed(2);
-    if (lado === "A") onChange(v, outro);
-    else onChange(outro, v);
+  const handle = (lado: "A" | "S", v: number) => {
+    const vv = Math.max(0, Math.min(v, total));
+    const outro = +(total - vv).toFixed(2);
+    if (lado === "A") onChange(vv, outro);
+    else onChange(outro, vv);
   };
 
   const field = (label: string, lado: "A" | "S", val: number) => (
     <View style={{ flex: 1 }}>
       <Text style={{ fontSize: 11, color: t.txtSub, marginBottom: 4 }}>{label}</Text>
-      <TextInput
-        keyboardType="decimal-pad"
-        value={val.toFixed(2).replace(".", ",")}
-        onChangeText={(raw) => handle(lado, raw)}
-        style={[s.input, { borderColor: t.border, backgroundColor: t.inputBg, color: t.txt }]}
+      <InputMoeda
+        valor={val}
+        onChange={(v) => handle(lado, v)}
+        prefixColor={t.txt}
+        style={[s.input, { borderColor: t.border, backgroundColor: t.inputBg }]}
       />
     </View>
   );

@@ -9,6 +9,7 @@ import { View, Text, Pressable, StyleSheet, LayoutAnimation } from "react-native
 import { useTheme } from "../theme/ThemeContext";
 import { Icon } from "./Icon";
 import { CampoDist } from "./CampoDist";
+import { CampoEdit } from "./CampoEdit";
 import { DespesaResolvida } from "../core/types";
 import { formatBRL } from "../core/finance";
 import { recurrenceLabel } from "../core/recurrence";
@@ -20,11 +21,12 @@ interface Props {
   onToggle: () => void;
   onEditDist: (lado: "distA" | "distS", v: number) => void;
   onTogglePago: (campo: "pagoA" | "pagoS") => void;
+  onEditValor: (v: number) => void;
   onEditTemplate: () => void;
 }
 
 export function CardDespesa({
-  despesa: d, expanded, isPast, onToggle, onEditDist, onTogglePago, onEditTemplate,
+  despesa: d, expanded, isPast, onToggle, onEditDist, onTogglePago, onEditValor, onEditTemplate,
 }: Props) {
   const { t } = useTheme();
 
@@ -66,6 +68,15 @@ export function CardDespesa({
       {/* Editável */}
       {expanded && (
         <View style={[s.body, { borderTopColor: t.border, backgroundColor: t.surfaceAlt }]}>
+          {!d.fixo && (
+            <View style={s.row}>
+              <Text style={[s.valorRealLbl, { color: t.txtSub }]}>Valor real</Text>
+              {isPast
+                ? <Text style={[s.valorRealVal, { color: t.txtHint }]}>{formatBRL(d.valor)}</Text>
+                : <CampoEdit valor={d.valor} onChange={onEditValor} />}
+            </View>
+          )}
+
           <View style={s.row}>
             <CampoDist label="Adiant." valor={d.distA} disabled={isPast}
               onChange={(v) => onEditDist("distA", v)} />
@@ -116,7 +127,9 @@ const s = StyleSheet.create({
   chips: { flexDirection: "row", gap: 4 },
   chip: { fontSize: 10, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, overflow: "hidden" },
   body: { padding: 10, borderTopWidth: 1, gap: 8 },
-  row: { flexDirection: "row", gap: 8 },
+  row: { flexDirection: "row", gap: 8, alignItems: "center" },
+  valorRealLbl: { fontSize: 11, fontWeight: "600", flex: 1 },
+  valorRealVal: { fontSize: 13, fontWeight: "600" },
   pago: { flex: 1, paddingVertical: 6, borderRadius: 8, borderWidth: 1, alignItems: "center" },
   editBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
   editTxt: { fontSize: 11, fontWeight: "500" },
