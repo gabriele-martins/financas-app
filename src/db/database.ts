@@ -81,6 +81,7 @@ export async function resetDatabase(): Promise<void> {
   await db.execAsync("DROP TABLE IF EXISTS instances");
   await db.execAsync("DROP TABLE IF EXISTS templates");
   await db.execAsync("DROP TABLE IF EXISTS settings");
+  await db.closeAsync();
   _dbPromise = null;
   await getDb();
 }
