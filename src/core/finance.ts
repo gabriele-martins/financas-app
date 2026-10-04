@@ -6,9 +6,13 @@
 
 import {
   Template, InstanceStore, InstanceOverride,
-  DespesaResolvida, ReceitaResolvida, Periodo,
+  DespesaResolvida, ReceitaResolvida, Periodo, StatusPag,
 } from "./types";
 import { occursInMonth } from "./recurrence";
+
+/** Status a partir dos booleanos persistidos; pago vence sobre guardado */
+const statusDe = (pago: boolean, guardado: boolean): StatusPag =>
+  pago ? "pago" : guardado ? "guardado" : "pendente";
 
 /** Lê um campo do override da instância, com fallback para o valor do template */
 function instValue<K extends keyof InstanceOverride>(
@@ -35,15 +39,22 @@ export function resolveDespesas(
   const monthKey = `${y}-${String(m).padStart(2, "0")}`;
   return templates
     .filter((t) => t.tipo === "despesa" && occursInMonth(t, y, m))
-    .map((t) => ({
-      ...t,
-      valor: instValue(instances, monthKey, t.id, "valor", t.valor),
-      distA: instValue(instances, monthKey, t.id, "distA", t.distA ?? 0),
-      distS: instValue(instances, monthKey, t.id, "distS", t.distS ?? 0),
-      pagoA: instValue(instances, monthKey, t.id, "pagoA", false),
-      pagoS: instValue(instances, monthKey, t.id, "pagoS", false),
-      fixo: t.fixo ?? true,
-    }));
+    .map((t) => {
+      const pagoA = instValue(instances, monthKey, t.id, "pagoA", false);
+      const pagoS = instValue(instances, monthKey, t.id, "pagoS", false);
+      const guardadoA = instValue(instances, monthKey, t.id, "guardadoA", false);
+      const guardadoS = instValue(instances, monthKey, t.id, "guardadoS", false);
+      return {
+        ...t,
+        valor: instValue(instances, monthKey, t.id, "valor", t.valor),
+        distA: instValue(instances, monthKey, t.id, "distA", t.distA ?? 0),
+        distS: instValue(instances, monthKey, t.id, "distS", t.distS ?? 0),
+        pagoA, pagoS, guardadoA, guardadoS,
+        statusA: statusDe(pagoA, guardadoA),
+        statusS: statusDe(pagoS, guardadoS),
+        fixo: t.fixo ?? true,
+      };
+    });
 }
 
 /**
@@ -76,10 +87,16 @@ export interface Totais {
   // despesas distribuídas
   totalDespA: number;
   totalDespS: number;
-  // já pago (reservado)
+  // efetivamente pago
   pagoA: number;
   pagoS: number;
-  // pendente
+  // separado, ainda não pago
+  guardadoA: number;
+  guardadoS: number;
+  // pago + guardado: dinheiro que já tem destino
+  comprometidoA: number;
+  comprometidoS: number;
+  // nada separado ainda
   pendA: number;
   pendS: number;
   // receitas previstas
@@ -107,8 +124,14 @@ export function calcTotais(
   const totalDespA = despesas.reduce((s, d) => s + d.distA, 0);
   const totalDespS = despesas.reduce((s, d) => s + d.distS, 0);
 
-  const pagoA = somaSe(despesas, (d) => d.pagoA, (d) => d.distA);
-  const pagoS = somaSe(despesas, (d) => d.pagoS, (d) => d.distS);
+  const pagoA = somaSe(despesas, (d) => d.statusA === "pago", (d) => d.distA);
+  const pagoS = somaSe(despesas, (d) => d.statusS === "pago", (d) => d.distS);
+
+  const guardadoA = somaSe(despesas, (d) => d.statusA === "guardado", (d) => d.distA);
+  const guardadoS = somaSe(despesas, (d) => d.statusS === "guardado", (d) => d.distS);
+
+  const comprometidoA = pagoA + guardadoA;
+  const comprometidoS = pagoS + guardadoS;
 
   const receitaPrevA = somaSe(receitas, (r) => r.periodo === "A", (r) => r.valor);
   const receitaPrevS = somaSe(receitas, (r) => r.periodo === "S", (r) => r.valor);
@@ -118,8 +141,10 @@ export function calcTotais(
   return {
     totalDespA, totalDespS,
     pagoA, pagoS,
-    pendA: totalDespA - pagoA,
-    pendS: totalDespS - pagoS,
+    guardadoA, guardadoS,
+    comprometidoA, comprometidoS,
+    pendA: totalDespA - comprometidoA,
+    pendS: totalDespS - comprometidoS,
     receitaPrevA, receitaPrevS,
     receitaRealA, receitaRealS,
     saldoPrevA: receitaPrevA - totalDespA,

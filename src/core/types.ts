@@ -49,6 +49,13 @@ export interface Template {
   dia: number;                   // dia do vencimento/recebimento (1–31)
   /** mês a partir do qual o template passa a valer: "2026-06" */
   startMonthKey: string;
+  /**
+   * Último mês em que o template vale (inclusive): "2026-11".
+   * Ausente = vale indefinidamente. Usado para "encerrar" um template sem
+   * apagá-lo, preservando o histórico dos meses passados — é o que sustenta
+   * a edição versionada e a exclusão por corte.
+   */
+  endMonthKey?: string;
   recurrence: Recurrence | null;
 
   // Só para receitas:
@@ -59,6 +66,11 @@ export interface Template {
   distS?: number;
   /** Só para despesas: false = variável (valor pode ser ajustado por mês na Distribuição). Default true. */
   fixo?: boolean;
+  /**
+   * Posição manual nas listas. Menor vem primeiro; empate cai no dia de
+   * vencimento. Definida ao reordenar ou ao ordenar alfabeticamente.
+   */
+  ordem?: number;
 }
 
 // ── Instância (override de um template em um mês específico) ──
@@ -74,7 +86,19 @@ export interface InstanceOverride {
   distS?: number;
   pagoA?: boolean;
   pagoS?: boolean;
+  /** dinheiro separado, conta ainda não paga (ver StatusPag) */
+  guardadoA?: boolean;
+  guardadoS?: boolean;
 }
+
+/**
+ * Status de uma despesa num período, no ciclo pendente → guardado → pago.
+ *
+ * Guardado e pago contam igual nos totais (ambos são dinheiro já comprometido);
+ * a diferença é só se o boleto já foi quitado. Derivado dos booleanos acima —
+ * `pago` vence sobre `guardado` se ambos estiverem marcados.
+ */
+export type StatusPag = "pendente" | "guardado" | "pago";
 
 /** instances[monthKey][templateId] = override */
 export type InstanceStore = Record<string, Record<number, InstanceOverride>>;
@@ -87,6 +111,11 @@ export interface DespesaResolvida extends Template {
   distS: number;
   pagoA: boolean;
   pagoS: boolean;
+  guardadoA: boolean;
+  guardadoS: boolean;
+  /** derivados dos booleanos acima — é o que a UI usa */
+  statusA: StatusPag;
+  statusS: StatusPag;
   fixo: boolean;
 }
 

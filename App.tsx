@@ -8,6 +8,7 @@ import {
   View, Text, Pressable, ActivityIndicator, StatusBar,
   Platform, UIManager, StyleSheet,
 } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { ThemeProvider, useTheme } from "./src/theme/ThemeContext";
 import { StoreProvider, useStore } from "./src/state/store";
@@ -156,14 +157,17 @@ function SaldoCard({ titulo, receita, despesa, saldo }: { titulo: string; receit
 }
 
 export default function App() {
+  // GestureHandlerRootView é exigido pelo drag-and-drop da reordenação
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <StoreProvider>
-          <Shell />
-        </StoreProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <StoreProvider>
+            <Shell />
+          </StoreProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

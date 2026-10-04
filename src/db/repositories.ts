@@ -19,11 +19,13 @@ interface TemplateRow {
   valor: number;
   dia: number;
   start_month_key: string;
+  end_month_key: string | null;
   recurrence: string | null;
   periodo: string | null;
   dist_a: number | null;
   dist_s: number | null;
   fixo: number;
+  ordem: number | null;
 }
 
 interface InstanceRow {
@@ -35,6 +37,8 @@ interface InstanceRow {
   dist_s: number | null;
   pago_a: number | null;
   pago_s: number | null;
+  guardado_a: number | null;
+  guardado_s: number | null;
 }
 
 // ── Mapeamento linha → domínio ──
@@ -48,11 +52,13 @@ function rowToTemplate(r: TemplateRow): Template {
     valor: r.valor,
     dia: r.dia,
     startMonthKey: r.start_month_key,
+    endMonthKey: r.end_month_key ?? undefined,
     recurrence: r.recurrence ? (JSON.parse(r.recurrence) as Recurrence) : null,
     periodo: (r.periodo as Periodo) ?? undefined,
     distA: r.dist_a ?? undefined,
     distS: r.dist_s ?? undefined,
     fixo: r.fixo === 1,
+    ordem: r.ordem ?? 0,
   };
 }
 
@@ -64,6 +70,8 @@ function rowToOverride(r: InstanceRow): InstanceOverride {
   if (r.dist_s != null) o.distS = r.dist_s;
   if (r.pago_a != null) o.pagoA = r.pago_a === 1;
   if (r.pago_s != null) o.pagoS = r.pago_s === 1;
+  if (r.guardado_a != null) o.guardadoA = r.guardado_a === 1;
+  if (r.guardado_s != null) o.guardadoS = r.guardado_s === 1;
   return o;
 }
 
@@ -74,7 +82,7 @@ function rowToOverride(r: InstanceRow): InstanceOverride {
 export async function getAllTemplates(): Promise<Template[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<TemplateRow>(
-    "SELECT * FROM templates ORDER BY tipo, dia"
+    "SELECT * FROM templates ORDER BY tipo, ordem, dia"
   );
   return rows.map(rowToTemplate);
 }
@@ -83,8 +91,8 @@ export async function insertTemplate(t: Omit<Template, "id">): Promise<number> {
   const db = await getDb();
   const res = await db.runAsync(
     `INSERT INTO templates
-       (tipo, nome, icone, valor, dia, start_month_key, recurrence, periodo, dist_a, dist_s, fixo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (tipo, nome, icone, valor, dia, start_month_key, end_month_key, recurrence, periodo, dist_a, dist_s, fixo, ordem)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       t.tipo ?? "despesa",
       t.nome ?? "",
@@ -92,11 +100,13 @@ export async function insertTemplate(t: Omit<Template, "id">): Promise<number> {
       t.valor ?? 0,
       t.dia ?? 1,
       t.startMonthKey ?? "",
+      t.endMonthKey ?? null,
       t.recurrence ? JSON.stringify(t.recurrence) : null,
       t.periodo ?? null,
       t.distA ?? null,
       t.distS ?? null,
       t.fixo === false ? 0 : 1,
+      t.ordem ?? 0,
     ]
   );
   return res.lastInsertRowId;
@@ -107,7 +117,7 @@ export async function updateTemplate(t: Template): Promise<void> {
   await db.runAsync(
     `UPDATE templates SET
        tipo = ?, nome = ?, icone = ?, valor = ?, dia = ?,
-       start_month_key = ?, recurrence = ?, periodo = ?, dist_a = ?, dist_s = ?, fixo = ?
+       start_month_key = ?, end_month_key = ?, recurrence = ?, periodo = ?, dist_a = ?, dist_s = ?, fixo = ?, ordem = ?
      WHERE id = ?`,
     [
       t.tipo ?? "despesa",
@@ -116,20 +126,51 @@ export async function updateTemplate(t: Template): Promise<void> {
       t.valor ?? 0,
       t.dia ?? 1,
       t.startMonthKey ?? "",
+      t.endMonthKey ?? null,
       t.recurrence ? JSON.stringify(t.recurrence) : null,
       t.periodo ?? null,
       t.distA ?? null,
       t.distS ?? null,
       t.fixo === false ? 0 : 1,
+      t.ordem ?? 0,
       t.id,
     ]
   );
+}
+
+/** Grava a posição de vários templates de uma vez (reordenação) */
+export async function updateOrdem(
+  pares: { id: number; ordem: number }[]
+): Promise<void> {
+  const db = await getDb();
+  for (const p of pares) {
+    await db.runAsync("UPDATE templates SET ordem = ? WHERE id = ?", [
+      p.ordem ?? 0,
+      p.id,
+    ]);
+  }
 }
 
 export async function deleteTemplate(id: number): Promise<void> {
   const db = await getDb();
   // ON DELETE CASCADE remove as instâncias relacionadas automaticamente
   await db.runAsync("DELETE FROM templates WHERE id = ?", [id]);
+}
+
+/**
+ * Encerra um template no mês informado (inclusive), sem apagá-lo.
+ * O template deixa de aparecer nos meses seguintes, mas continua
+ * resolvendo normalmente no passado — é o que preserva o histórico.
+ */
+export async function endTemplate(
+  id: number,
+  endMonthKey: string
+): Promise<void> {
+  const db = await getDb();
+  await db.runAsync("UPDATE templates SET end_month_key = ? WHERE id = ?", [
+    endMonthKey ?? null,
+    id,
+  ]);
 }
 
 // ════════════════════════════════════════════════
@@ -171,8 +212,8 @@ export async function upsertInstance(
 
   await db.runAsync(
     `INSERT OR REPLACE INTO instances
-       (month_key, template_id, valor, valor_real, dist_a, dist_s, pago_a, pago_s)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (month_key, template_id, valor, valor_real, dist_a, dist_s, pago_a, pago_s, guardado_a, guardado_s)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       monthKey,
       templateId,
@@ -182,6 +223,8 @@ export async function upsertInstance(
       merged.distS ?? null,
       b(merged.pagoA),
       b(merged.pagoS),
+      b(merged.guardadoA),
+      b(merged.guardadoS),
     ]
   );
 }
@@ -200,6 +243,17 @@ export async function clearFutureInstances(
     "DELETE FROM instances WHERE template_id = ? AND month_key >= ?",
     [templateId, fromMonthKey]
   );
+}
+
+/**
+ * Apaga todos os templates e instâncias (settings/tema são preservados).
+ * Usado na importação em modo "substituir tudo".
+ */
+export async function limparDados(): Promise<void> {
+  const db = await getDb();
+  // Sem transação: ver nota no CLAUDE.md — transação mascarava o erro real.
+  await db.runAsync("DELETE FROM instances");
+  await db.runAsync("DELETE FROM templates");
 }
 
 // ════════════════════════════════════════════════

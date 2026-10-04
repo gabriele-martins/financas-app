@@ -23,8 +23,8 @@ export function PrevistoScreen({ onEditTemplate }: Props) {
   const [exp, setExp] = useState<Periodo | null>(null);
 
   const cards: { key: Periodo; titulo: string; e: number; d: number; s: number; p: number; r: number }[] = [
-    { key: "A", titulo: "Adiantamento", e: totais.receitaPrevA, d: totais.totalDespA, s: totais.saldoPrevA, p: totais.pagoA, r: totais.pendA },
-    { key: "S", titulo: "Salário",      e: totais.receitaPrevS, d: totais.totalDespS, s: totais.saldoPrevS, p: totais.pagoS, r: totais.pendS },
+    { key: "A", titulo: "Adiantamento", e: totais.receitaPrevA, d: totais.totalDespA, s: totais.saldoPrevA, p: totais.comprometidoA, r: totais.pendA },
+    { key: "S", titulo: "Salário",      e: totais.receitaPrevS, d: totais.totalDespS, s: totais.saldoPrevS, p: totais.comprometidoS, r: totais.pendS },
   ];
 
   return (
@@ -33,7 +33,7 @@ export function PrevistoScreen({ onEditTemplate }: Props) {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={s.list} keyboardShouldPersistTaps="handled">
         {cards.map((c) => (
           <CardPeriodo key={c.key} titulo={c.titulo} entrada={c.e} despesa={c.d} saldo={c.s}
-            pagoLabel="Reservado" pago={c.p} pendente={c.r}
+            pagoLabel="Comprometido" pago={c.p} pendente={c.r}
             expanded={exp === c.key} onToggle={() => setExp(exp === c.key ? null : c.key)}>
             <Linha label="Receita" valor={formatBRL(c.e)} color={t.incomeC} t={t} />
           </CardPeriodo>

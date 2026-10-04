@@ -15,6 +15,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.gabi.financasapp",
+      "versionCode": 3,
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {

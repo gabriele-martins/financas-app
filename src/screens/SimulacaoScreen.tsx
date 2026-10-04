@@ -5,7 +5,7 @@
 // Não persiste nada — estado local, efêmero.
 // ════════════════════════════════════════════════
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useTheme } from "../theme/ThemeContext";
 import { useStore } from "../state/store";
@@ -23,6 +23,26 @@ export function SimulacaoScreen() {
   const mostraA = filtro === "A" || filtro === "ambos";
   const mostraS = filtro === "S" || filtro === "ambos";
 
+  /**
+   * Só as despesas que têm valor no(s) período(s) filtrado(s).
+   * Com o filtro em "Adiantamento", uma conta 100% do Salário não tem o que
+   * mostrar ali — apareceria como R$ 0,00 e só poluiria a lista.
+   */
+  const visiveis = useMemo(
+    () => despesas.filter((d) => (mostraA && d.distA > 0) || (mostraS && d.distS > 0)),
+    [despesas, mostraA, mostraS]
+  );
+
+  // Ao trocar de filtro, descarta seleções que saíram de vista —
+  // senão elas continuariam somando no rodapé sem aparecer na lista.
+  useEffect(() => {
+    setSelecionados((prev) => {
+      const next = new Set<number>();
+      for (const d of visiveis) if (prev.has(d.id)) next.add(d.id);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [visiveis]);
+
   const toggle = (id: number) => {
     setSelecionados((prev) => {
       const next = new Set(prev);
@@ -32,26 +52,28 @@ export function SimulacaoScreen() {
     });
   };
 
-  const marcarTudo = () => setSelecionados(new Set(despesas.map((d) => d.id)));
+  const marcarTudo = () => setSelecionados(new Set(visiveis.map((d) => d.id)));
   const desmarcarTudo = () => setSelecionados(new Set());
   const marcarPendentes = () =>
     setSelecionados(
       new Set(
-        despesas
-          .filter((d) => (mostraA && d.distA > 0 && !d.pagoA) || (mostraS && d.distS > 0 && !d.pagoS))
+        visiveis
+          .filter((d) =>
+            (mostraA && d.distA > 0 && d.statusA === "pendente") ||
+            (mostraS && d.distS > 0 && d.statusS === "pendente"))
           .map((d) => d.id)
       )
     );
 
   const { somaA, somaS } = useMemo(() => {
     let a = 0, s = 0;
-    for (const d of despesas) {
+    for (const d of visiveis) {
       if (!selecionados.has(d.id)) continue;
       a += d.distA;
       s += d.distS;
     }
     return { somaA: a, somaS: s };
-  }, [despesas, selecionados]);
+  }, [visiveis, selecionados]);
 
   const difA = totais.receitaPrevA - somaA;
   const difS = totais.receitaPrevS - somaS;
@@ -91,7 +113,13 @@ export function SimulacaoScreen() {
 
       {/* Lista de despesas */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={s.list} keyboardShouldPersistTaps="handled">
-        {despesas.map((d) => {
+        {visiveis.length === 0 && (
+          <Text style={{ fontSize: 12, color: t.txtHint, textAlign: "center", paddingVertical: 24 }}>
+            Nenhuma despesa neste período.
+          </Text>
+        )}
+
+        {visiveis.map((d) => {
           const marcado = selecionados.has(d.id);
           return (
             <Pressable key={d.id} onPress={() => toggle(d.id)}

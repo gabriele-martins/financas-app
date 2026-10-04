@@ -9,9 +9,9 @@ import React from "react";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import {
   // navegação / UI
-  Home01Icon, Menu01Icon, ArrowLeft01Icon, ArrowRight01Icon,
+  Menu01Icon, ArrowLeft01Icon, ArrowRight01Icon,
   ArrowDown01Icon, Cancel01Icon, PlusSignIcon, Edit02Icon,
-  DashboardSquare01Icon, LeftToRightListBulletIcon, CheckmarkCircle02Icon,
+  DashboardSquare01Icon, LeftToRightListBulletIcon, CheckmarkCircle02Icon, Delete02Icon,
   ArrowDownRight01Icon, ArrowUpRight01Icon,
   // financeiro / categorias
   Wallet02Icon, CreditCardIcon, PiggyBankIcon, BankIcon, MoneyBag02Icon,
@@ -29,15 +29,17 @@ import {
   HeadphonesIcon, LaptopIcon, GameboyIcon, FootballIcon, TennisRacketIcon,
   PlantIcon, Sun01Icon, Moon01Icon, CloudIcon, UmbrellaIcon,
   Baby01Icon, GraduationCapIcon, Briefcase01Icon, Building01Icon, ChurchIcon,
+  House03Icon, Sofa01Icon, BedIcon, CleaningBucketIcon, Scissor01Icon,
+  ToolboxIcon, FlowerIcon, Shield01Icon,
 } from "@hugeicons/core-free-icons";
 
 // Mapa nome curto → componente do Hugeicons
 const MAP = {
   // UI
-  home: Home01Icon, menu: Menu01Icon, chevL: ArrowLeft01Icon, chevR: ArrowRight01Icon,
+  home: House03Icon, menu: Menu01Icon, chevL: ArrowLeft01Icon, chevR: ArrowRight01Icon,
   chevD: ArrowDown01Icon, close: Cancel01Icon, plus: PlusSignIcon, edit: Edit02Icon,
   grid: DashboardSquare01Icon, list: LeftToRightListBulletIcon, check: CheckmarkCircle02Icon,
-  expense: ArrowUpRight01Icon, income: ArrowDownRight01Icon,
+  expense: ArrowUpRight01Icon, income: ArrowDownRight01Icon, trash: Delete02Icon,
   // categorias selecionáveis (30)
   cash: MoneyBag02Icon, wallet: Wallet02Icon, card: CreditCardIcon, pig: PiggyBankIcon,
   bank: BankIcon, cart: ShoppingCart01Icon, bag: ShoppingBag01Icon, tag: Tag01Icon,
@@ -55,6 +57,8 @@ const MAP = {
   headphone: HeadphonesIcon, laptop: LaptopIcon, gameboy: GameboyIcon, football: FootballIcon, tennis: TennisRacketIcon,
   plant: PlantIcon, sun: Sun01Icon, moon: Moon01Icon, cloud: CloudIcon, umbrella: UmbrellaIcon,
   baby: Baby01Icon, graduation: GraduationCapIcon, briefcase: Briefcase01Icon, building: Building01Icon, church: ChurchIcon,
+  sofa: Sofa01Icon, cama: BedIcon, limpeza: CleaningBucketIcon, salao: Scissor01Icon,
+  ferramenta: ToolboxIcon, flor: FlowerIcon, seguro: Shield01Icon,
 } as const;
 
 export type IconName = keyof typeof MAP;
@@ -72,6 +76,7 @@ export const ICON_CHOICES: IconName[] = [
   "headphone", "laptop", "gameboy", "football", "tennis",
   "plant", "sun", "moon", "cloud", "umbrella",
   "baby", "graduation", "briefcase", "building", "church",
+  "sofa", "cama", "limpeza", "salao", "ferramenta", "flor", "seguro",
 ];
 
 interface IconProps {

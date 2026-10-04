@@ -17,7 +17,7 @@ interface Props {
   entrada: number;         // receita (prevista ou real)
   despesa: number;
   saldo: number;
-  pagoLabel: string;       // "Reservado" | "Realizado"
+  pagoLabel: string;       // "Comprometido" | "Realizado"
   pago: number;
   pendente: number;
   expanded: boolean;
@@ -71,7 +71,7 @@ export function CardPeriodo({
             <View style={[s.barFill, { backgroundColor: t.accent, width: `${pct}%` }]} />
           </View>
           <Text style={{ fontSize: 10, color: t.txtHint, marginTop: 4 }}>
-            {Math.round(pct)}% {pagoLabel === "Reservado" ? "das contas pagas" : "realizado"}
+            {Math.round(pct)}% {pagoLabel === "Comprometido" ? "das contas reservadas ou pagas" : "realizado"}
           </Text>
         </View>
       )}

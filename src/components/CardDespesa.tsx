@@ -10,7 +10,7 @@ import { useTheme } from "../theme/ThemeContext";
 import { Icon } from "./Icon";
 import { CampoDist } from "./CampoDist";
 import { CampoEdit } from "./CampoEdit";
-import { DespesaResolvida } from "../core/types";
+import { DespesaResolvida, StatusPag } from "../core/types";
 import { formatBRL } from "../core/finance";
 import { recurrenceLabel } from "../core/recurrence";
 
@@ -20,7 +20,7 @@ interface Props {
   isPast: boolean;
   onToggle: () => void;
   onEditDist: (lado: "distA" | "distS", v: number) => void;
-  onTogglePago: (campo: "pagoA" | "pagoS") => void;
+  onTogglePago: (lado: "A" | "S") => void;
   onEditValor: (v: number) => void;
   onEditTemplate: () => void;
 }
@@ -86,10 +86,10 @@ export function CardDespesa({
 
           <View style={s.row}>
             {d.distA > 0 && (
-              <PagoBtn pago={d.pagoA} disabled={isPast} onPress={() => onTogglePago("pagoA")} />
+              <PagoBtn status={d.statusA} disabled={isPast} onPress={() => onTogglePago("A")} />
             )}
             {d.distS > 0 && (
-              <PagoBtn pago={d.pagoS} disabled={isPast} onPress={() => onTogglePago("pagoS")} />
+              <PagoBtn status={d.statusS} disabled={isPast} onPress={() => onTogglePago("S")} />
             )}
           </View>
 
@@ -106,13 +106,20 @@ export function CardDespesa({
   );
 }
 
-function PagoBtn({ pago, disabled, onPress }: { pago: boolean; disabled?: boolean; onPress: () => void }) {
+/** Ciclo pendente → guardado → pago; um toque avança para o próximo */
+function PagoBtn({ status, disabled, onPress }: { status: StatusPag; disabled?: boolean; onPress: () => void }) {
   const { t } = useTheme();
+  const visual = {
+    pendente: { label: "Pendente", cor: t.expenseTxt, bg: t.surfaceAlt, peso: "500" as const },
+    guardado: { label: "Reservado", cor: t.warn, bg: t.warnBg, peso: "600" as const },
+    pago: { label: "Pago", cor: t.incomeC, bg: t.incomeBg, peso: "600" as const },
+  }[status];
+
   return (
     <Pressable onPress={onPress} disabled={disabled}
-      style={[s.pago, { backgroundColor: t.surfaceAlt, borderColor: t.border, opacity: disabled ? 0.5 : 1 }]}>
-      <Text style={{ fontSize: 11, fontWeight: pago ? "600" : "500", color: pago ? t.incomeC : t.expenseTxt }}>
-        {pago ? "✓ Pago" : "Pendente"}
+      style={[s.pago, { backgroundColor: visual.bg, borderColor: t.border, opacity: disabled ? 0.5 : 1 }]}>
+      <Text style={{ fontSize: 11, fontWeight: visual.peso, color: visual.cor }}>
+        {visual.label}
       </Text>
     </Pressable>
   );

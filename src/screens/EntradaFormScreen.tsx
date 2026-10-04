@@ -5,7 +5,7 @@
 // ════════════════════════════════════════════════
 
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Platform, StyleSheet } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, Platform, Alert, StyleSheet } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useTheme } from "../theme/ThemeContext";
 import { useStore } from "../state/store";
@@ -16,7 +16,7 @@ import { RecurrencePicker } from "../components/RecurrencePicker";
 import { InputMoeda } from "../components/InputMoeda";
 import { Tipo, Template, Recurrence } from "../core/types";
 import { DEFAULT_RULE, monthlyRule } from "../core/recurrence";
-import { periodoByDay, mKey, pad, CUR_YEAR, CUR_MONTH } from "../core/date";
+import { periodoByDay, pad } from "../core/date";
 
 interface Props {
   /** template a editar; ausência = criar novo */
@@ -26,13 +26,16 @@ interface Props {
 
 export function EntradaFormScreen({ editing, onDone }: Props) {
   const { t } = useTheme();
-  const { criarTemplate, editarTemplate, monthKey } = useStore();
+  const { criarTemplate, editarTemplate, excluirTemplate, monthKey, viewY, viewM } = useStore();
 
   const [tipo, setTipo] = useState<Tipo>(editing?.tipo ?? "despesa");
   const [nome, setNome] = useState(editing?.nome ?? "");
   const [valor, setValor] = useState(editing?.valor ?? 0);
   const [icone, setIcone] = useState<string>(editing?.icone ?? "cash");
-  const [data, setData] = useState<Date>(editing ? new Date(CUR_YEAR, CUR_MONTH - 1, editing.dia) : new Date());
+  // Data ancorada no mês visível — é dele em diante que a edição vale
+  const [data, setData] = useState<Date>(
+    editing ? new Date(viewY, viewM - 1, editing.dia) : new Date(viewY, viewM - 1, new Date().getDate())
+  );
   const [showDate, setShowDate] = useState(false);
   const [rec, setRec] = useState<Recurrence | null>(editing?.recurrence ?? monthlyRule(new Date().getDate()));
   const [distA, setDistA] = useState(editing?.distA ?? 0);
@@ -86,6 +89,26 @@ export function EntradaFormScreen({ editing, onDone }: Props) {
       });
     }
     onDone();
+  };
+
+  const excluir = () => {
+    if (!editing) return;
+    const label = tipo === "despesa" ? "despesa" : "receita";
+    Alert.alert(
+      `Excluir ${label}?`,
+      `"${editing.nome}" deixa de aparecer deste mês em diante. Os meses anteriores ficam preservados no histórico.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            await excluirTemplate(editing.id);
+            onDone();
+          },
+        },
+      ]
+    );
   };
 
   const inp = [s.input, { borderColor: t.inputBorder, backgroundColor: t.inputBg, color: t.txt }];
@@ -176,6 +199,22 @@ export function EntradaFormScreen({ editing, onDone }: Props) {
         <Pressable onPress={salvar} style={[s.save, { backgroundColor: t.accent }]}>
           <Text style={{ fontSize: 15, fontWeight: "700", color: "#fff" }}>Salvar</Text>
         </Pressable>
+
+        {/* Excluir — só ao editar */}
+        {editing && (
+          <>
+            <Pressable onPress={excluir} style={[s.delete, { borderColor: t.expenseTxt }]}>
+              <Icon name="trash" size={16} color={t.expenseTxt} />
+              <Text style={{ fontSize: 14, fontWeight: "600", color: t.expenseTxt }}>
+                Excluir {tipo === "despesa" ? "despesa" : "receita"}
+              </Text>
+            </Pressable>
+            <Text style={{ fontSize: 11, color: t.txtHint, textAlign: "center", marginTop: 8 }}>
+              Alterações e exclusões valem deste mês em diante. O histórico dos meses
+              anteriores é preservado.
+            </Text>
+          </>
+        )}
       </ScrollView>
 
       <IconModal visible={iconModal} selected={icone}
@@ -192,4 +231,8 @@ const s = StyleSheet.create({
   dateBtn: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   recBox: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 16 },
   save: { paddingVertical: 14, borderRadius: 14, alignItems: "center", marginBottom: 8 },
+  delete: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 13, borderRadius: 14, borderWidth: 1, marginBottom: 8,
+  },
 });

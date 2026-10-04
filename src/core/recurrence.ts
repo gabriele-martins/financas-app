@@ -80,6 +80,9 @@ export function recurrenceLabel(r: Recurrence | null): string {
 export function occursInMonth(tpl: Template, y: number, m: number): boolean {
   const monthKey = `${y}-${String(m).padStart(2, "0")}`;
 
+  // Template encerrado: não aparece depois do mês de corte (inclusive).
+  if (tpl.endMonthKey && monthKey > tpl.endMonthKey) return false;
+
   if (!tpl.recurrence) {
     return monthKey === tpl.startMonthKey;
   }
