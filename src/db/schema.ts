@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS templates (
   dist_a          REAL,                        -- só despesa
   dist_s          REAL,                        -- só despesa
   fixo            INTEGER NOT NULL DEFAULT 1,   -- só despesa: 1=fixo, 0=variável
+  ordem           INTEGER NOT NULL DEFAULT 0,   -- posição manual nas listas
   created_at      TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 

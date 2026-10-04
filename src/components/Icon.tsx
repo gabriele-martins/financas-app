@@ -29,6 +29,7 @@ import {
   HeadphonesIcon, LaptopIcon, GameboyIcon, FootballIcon, TennisRacketIcon,
   PlantIcon, Sun01Icon, Moon01Icon, CloudIcon, UmbrellaIcon,
   Baby01Icon, GraduationCapIcon, Briefcase01Icon, Building01Icon, ChurchIcon,
+  House01Icon, House03Icon, Home09Icon,
 } from "@hugeicons/core-free-icons";
 
 // Mapa nome curto → componente do Hugeicons
@@ -55,6 +56,8 @@ const MAP = {
   headphone: HeadphonesIcon, laptop: LaptopIcon, gameboy: GameboyIcon, football: FootballIcon, tennis: TennisRacketIcon,
   plant: PlantIcon, sun: Sun01Icon, moon: Moon01Icon, cloud: CloudIcon, umbrella: UmbrellaIcon,
   baby: Baby01Icon, graduation: GraduationCapIcon, briefcase: Briefcase01Icon, building: Building01Icon, church: ChurchIcon,
+  // casas alternativas (o "home" padrão tem traçado mais estilizado)
+  casa: House01Icon, casa2: House03Icon, casa3: Home09Icon,
 } as const;
 
 export type IconName = keyof typeof MAP;
@@ -72,6 +75,7 @@ export const ICON_CHOICES: IconName[] = [
   "headphone", "laptop", "gameboy", "football", "tennis",
   "plant", "sun", "moon", "cloud", "umbrella",
   "baby", "graduation", "briefcase", "building", "church",
+  "casa", "casa2", "casa3",
 ];
 
 interface IconProps {

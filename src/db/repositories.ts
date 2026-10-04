@@ -25,6 +25,7 @@ interface TemplateRow {
   dist_a: number | null;
   dist_s: number | null;
   fixo: number;
+  ordem: number | null;
 }
 
 interface InstanceRow {
@@ -57,6 +58,7 @@ function rowToTemplate(r: TemplateRow): Template {
     distA: r.dist_a ?? undefined,
     distS: r.dist_s ?? undefined,
     fixo: r.fixo === 1,
+    ordem: r.ordem ?? 0,
   };
 }
 
@@ -80,7 +82,7 @@ function rowToOverride(r: InstanceRow): InstanceOverride {
 export async function getAllTemplates(): Promise<Template[]> {
   const db = await getDb();
   const rows = await db.getAllAsync<TemplateRow>(
-    "SELECT * FROM templates ORDER BY tipo, dia"
+    "SELECT * FROM templates ORDER BY tipo, ordem, dia"
   );
   return rows.map(rowToTemplate);
 }
@@ -89,8 +91,8 @@ export async function insertTemplate(t: Omit<Template, "id">): Promise<number> {
   const db = await getDb();
   const res = await db.runAsync(
     `INSERT INTO templates
-       (tipo, nome, icone, valor, dia, start_month_key, end_month_key, recurrence, periodo, dist_a, dist_s, fixo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (tipo, nome, icone, valor, dia, start_month_key, end_month_key, recurrence, periodo, dist_a, dist_s, fixo, ordem)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       t.tipo ?? "despesa",
       t.nome ?? "",
@@ -104,6 +106,7 @@ export async function insertTemplate(t: Omit<Template, "id">): Promise<number> {
       t.distA ?? null,
       t.distS ?? null,
       t.fixo === false ? 0 : 1,
+      t.ordem ?? 0,
     ]
   );
   return res.lastInsertRowId;
@@ -114,7 +117,7 @@ export async function updateTemplate(t: Template): Promise<void> {
   await db.runAsync(
     `UPDATE templates SET
        tipo = ?, nome = ?, icone = ?, valor = ?, dia = ?,
-       start_month_key = ?, end_month_key = ?, recurrence = ?, periodo = ?, dist_a = ?, dist_s = ?, fixo = ?
+       start_month_key = ?, end_month_key = ?, recurrence = ?, periodo = ?, dist_a = ?, dist_s = ?, fixo = ?, ordem = ?
      WHERE id = ?`,
     [
       t.tipo ?? "despesa",
@@ -129,9 +132,23 @@ export async function updateTemplate(t: Template): Promise<void> {
       t.distA ?? null,
       t.distS ?? null,
       t.fixo === false ? 0 : 1,
+      t.ordem ?? 0,
       t.id,
     ]
   );
+}
+
+/** Grava a posição de vários templates de uma vez (reordenação) */
+export async function updateOrdem(
+  pares: { id: number; ordem: number }[]
+): Promise<void> {
+  const db = await getDb();
+  for (const p of pares) {
+    await db.runAsync("UPDATE templates SET ordem = ? WHERE id = ?", [
+      p.ordem ?? 0,
+      p.id,
+    ]);
+  }
 }
 
 export async function deleteTemplate(id: number): Promise<void> {

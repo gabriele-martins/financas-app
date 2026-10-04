@@ -4,10 +4,11 @@
 // ════════════════════════════════════════════════
 
 import React, { useState } from "react";
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { View, Text, ScrollView, Pressable, LayoutAnimation, StyleSheet } from "react-native";
 import { useTheme } from "../theme/ThemeContext";
 import { useStore } from "../state/store";
 import { CardDespesa } from "../components/CardDespesa";
+import { Icon } from "../components/Icon";
 import { formatBRL } from "../core/finance";
 
 interface Props {
@@ -17,12 +18,44 @@ interface Props {
 
 export function DistribuicaoScreen({ onEditTemplate }: Props) {
   const { t } = useTheme();
-  const { despesas, totais, isPast, emCarencia, carenciaDias, editarDistribuicao, alternarPago, editarValorDespesa } = useStore();
+  const {
+    despesas, totais, isPast, emCarencia, carenciaDias,
+    editarDistribuicao, alternarPago, editarValorDespesa,
+    moverDespesa, ordenarDespesasAZ,
+  } = useStore();
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [reordenando, setReordenando] = useState(false);
+
+  const toggleReordenar = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedId(null);
+    setReordenando((v) => !v);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
-      <Text style={[s.title, { color: t.txt }]}>Distribuição</Text>
+      <View style={s.titleRow}>
+        <Text style={[s.title, { color: t.txt }]}>Distribuição</Text>
+        {despesas.length > 1 && (
+          <View style={s.titleActions}>
+            {reordenando && (
+              <Pressable onPress={ordenarDespesasAZ}
+                style={[s.miniBtn, { borderColor: t.border, backgroundColor: t.surface }]}>
+                <Text style={{ fontSize: 11, fontWeight: "600", color: t.accent }}>A–Z</Text>
+              </Pressable>
+            )}
+            <Pressable onPress={toggleReordenar}
+              style={[s.miniBtn, {
+                borderColor: reordenando ? t.accent : t.border,
+                backgroundColor: reordenando ? t.accent : t.surface,
+              }]}>
+              <Text style={{ fontSize: 11, fontWeight: "600", color: reordenando ? "#fff" : t.accent }}>
+                {reordenando ? "Concluir" : "Reordenar"}
+              </Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
 
       {/* Lista rolável */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={s.list} keyboardShouldPersistTaps="handled">
@@ -43,19 +76,35 @@ export function DistribuicaoScreen({ onEditTemplate }: Props) {
           </View>
         )}
 
-        {despesas.map((d) => (
-          <CardDespesa
-            key={d.id}
-            despesa={d}
-            expanded={expandedId === d.id}
-            isPast={isPast}
-            onToggle={() => setExpandedId(expandedId === d.id ? null : d.id)}
-            onEditDist={(lado, v) => editarDistribuicao(d.id, lado, v)}
-            onTogglePago={(campo) => alternarPago(d.id, campo)}
-            onEditValor={(v) => editarValorDespesa(d.id, v)}
-            onEditTemplate={() => onEditTemplate(d.id)}
-          />
-        ))}
+        {reordenando
+          ? despesas.map((d, i) => (
+              <View key={d.id}
+                style={[s.reordRow, { backgroundColor: t.surface, borderColor: t.border }]}>
+                <Icon name={d.icone} size={18} color={t.txtSub} />
+                <Text numberOfLines={1} style={[s.reordNome, { color: t.txt }]}>{d.nome}</Text>
+                <Pressable onPress={() => moverDespesa(d.id, -1)} disabled={i === 0}
+                  style={[s.setaBtn, { borderColor: t.border, opacity: i === 0 ? 0.3 : 1 }]}>
+                  <Text style={{ fontSize: 15, color: t.accent, lineHeight: 18 }}>↑</Text>
+                </Pressable>
+                <Pressable onPress={() => moverDespesa(d.id, 1)} disabled={i === despesas.length - 1}
+                  style={[s.setaBtn, { borderColor: t.border, opacity: i === despesas.length - 1 ? 0.3 : 1 }]}>
+                  <Text style={{ fontSize: 15, color: t.accent, lineHeight: 18 }}>↓</Text>
+                </Pressable>
+              </View>
+            ))
+          : despesas.map((d) => (
+              <CardDespesa
+                key={d.id}
+                despesa={d}
+                expanded={expandedId === d.id}
+                isPast={isPast}
+                onToggle={() => setExpandedId(expandedId === d.id ? null : d.id)}
+                onEditDist={(lado, v) => editarDistribuicao(d.id, lado, v)}
+                onTogglePago={(campo) => alternarPago(d.id, campo)}
+                onEditValor={(v) => editarValorDespesa(d.id, v)}
+                onEditTemplate={() => onEditTemplate(d.id)}
+              />
+            ))}
       </ScrollView>
 
       {/* Total fixo */}
@@ -71,7 +120,22 @@ export function DistribuicaoScreen({ onEditTemplate }: Props) {
 }
 
 const s = StyleSheet.create({
+  titleRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingRight: 16,
+  },
   title: { fontSize: 18, fontWeight: "700", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+  titleActions: { flexDirection: "row", gap: 6 },
+  miniBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1 },
+  reordRow: {
+    flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 10,
+    borderWidth: 1, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 6,
+  },
+  reordNome: { flex: 1, fontSize: 13, fontWeight: "500" },
+  setaBtn: {
+    width: 32, height: 32, borderRadius: 8, borderWidth: 1,
+    alignItems: "center", justifyContent: "center",
+  },
   list: { paddingHorizontal: 12, paddingBottom: 12 },
   histBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 12 },
   totalWrap: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 12 },

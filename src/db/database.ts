@@ -54,6 +54,12 @@ export function getDb(): Promise<SQLite.SQLiteDatabase> {
       // coluna já existe — ok
     }
 
+    try {
+      await db.execAsync("ALTER TABLE templates ADD COLUMN ordem INTEGER NOT NULL DEFAULT 0");
+    } catch {
+      // coluna já existe — ok
+    }
+
     // Seed só se a tabela estiver vazia
     // const row = await db.getFirstAsync<{ n: number }>(
     //   "SELECT COUNT(*) AS n FROM templates"

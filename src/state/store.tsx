@@ -52,6 +52,11 @@ interface StoreValue {
   editarValorReal: (templateId: number, valor: number) => Promise<void>;
   editarValorDespesa: (templateId: number, valor: number) => Promise<void>;
 
+  /** move uma despesa uma posição para cima/baixo na ordem manual */
+  moverDespesa: (templateId: number, delta: -1 | 1) => Promise<void>;
+  /** reordena as despesas alfabeticamente por nome */
+  ordenarDespesasAZ: () => Promise<void>;
+
   reload: () => Promise<void>;
 }
 
@@ -134,9 +139,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // ── Ações de template ──
 
   const criarTemplate = useCallback(async (t: Omit<Template, "id">) => {
-    const id = await repo.insertTemplate(t);
-    setTemplates((prev) => [...prev, { ...t, id }]);
-  }, []);
+    // entra no fim da lista do seu tipo, para não embaralhar a ordem manual
+    const ordem =
+      t.ordem ??
+      templates.reduce((max, x) => (x.tipo === t.tipo ? Math.max(max, x.ordem ?? 0) : max), 0) + 1;
+    const comOrdem = { ...t, ordem };
+    const id = await repo.insertTemplate(comOrdem);
+    setTemplates((prev) => [...prev, { ...comOrdem, id }]);
+  }, [templates]);
 
   /** Remove, no estado local, os overrides de um template do mês visível em diante */
   const dropInstancesFrom = useCallback((id: number) => {
@@ -290,6 +300,49 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [isPast, despesas, applyOverride]
   );
 
+  // ── Ordenação manual ──
+
+  /**
+   * Persiste uma nova ordem de despesas e reflete no estado local.
+   * A posição é gravada no template (vale para todas as telas e meses).
+   */
+  const aplicarOrdem = useCallback(async (idsNaOrdem: number[]) => {
+    const pares = idsNaOrdem.map((id, i) => ({ id, ordem: i + 1 }));
+    await repo.updateOrdem(pares);
+
+    const porId = new Map(pares.map((p) => [p.id, p.ordem]));
+    setTemplates((prev) => {
+      const next = prev.map((t) =>
+        porId.has(t.id) ? { ...t, ordem: porId.get(t.id)! } : t
+      );
+      // mesma regra do SELECT: tipo, ordem, dia
+      return next.sort((a, b) =>
+        a.tipo !== b.tipo
+          ? a.tipo.localeCompare(b.tipo)
+          : (a.ordem ?? 0) - (b.ordem ?? 0) || a.dia - b.dia
+      );
+    });
+  }, []);
+
+  const moverDespesa = useCallback(
+    async (templateId: number, delta: -1 | 1) => {
+      const ids = despesas.map((d) => d.id);
+      const i = ids.indexOf(templateId);
+      const j = i + delta;
+      if (i < 0 || j < 0 || j >= ids.length) return;
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+      await aplicarOrdem(ids);
+    },
+    [despesas, aplicarOrdem]
+  );
+
+  const ordenarDespesasAZ = useCallback(async () => {
+    const ids = [...despesas]
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
+      .map((d) => d.id);
+    await aplicarOrdem(ids);
+  }, [despesas, aplicarOrdem]);
+
   const value: StoreValue = {
     loading,
     viewY, viewM, monthKey, isPast, goMonth,
@@ -298,6 +351,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     despesas, receitas, totais,
     criarTemplate, editarTemplate, excluirTemplate,
     editarDistribuicao, alternarPago, editarValorReal, editarValorDespesa,
+    moverDespesa, ordenarDespesasAZ,
     reload: carregar,
   };
 

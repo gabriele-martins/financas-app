@@ -99,6 +99,9 @@ function parseTemplate(raw: any): Omit<Template, "id"> | null {
     base.endMonthKey = raw.endMonthKey;
   }
 
+  const ordem = numOuUndef(raw.ordem);
+  if (ordem != null) base.ordem = ordem;
+
   if (tipo === "receita") {
     base.periodo = (raw.periodo === "S" ? "S" : "A") as Periodo;
   } else {

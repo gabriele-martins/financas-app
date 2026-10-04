@@ -66,6 +66,11 @@ export interface Template {
   distS?: number;
   /** Só para despesas: false = variável (valor pode ser ajustado por mês na Distribuição). Default true. */
   fixo?: boolean;
+  /**
+   * Posição manual nas listas. Menor vem primeiro; empate cai no dia de
+   * vencimento. Definida ao reordenar ou ao ordenar alfabeticamente.
+   */
+  ordem?: number;
 }
 
 // ── Instância (override de um template em um mês específico) ──

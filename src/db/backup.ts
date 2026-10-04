@@ -103,10 +103,24 @@ export async function importarBackup(substituir: boolean): Promise<ResultadoImpo
 
   if (substituir) await limparDados();
 
+  // Backups sem ordem (ou com tudo zerado) entram em ordem alfabética —
+  // ponto de partida previsível, que o usuário reordena depois se quiser.
+  const semOrdem = templates.every((t) => !t.ordem);
+  const ordemPorIndice = new Map<number, number>();
+  if (semOrdem) {
+    templates
+      .map((t, i) => ({ i, nome: t.nome }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }))
+      .forEach(({ i }, pos) => ordemPorIndice.set(i, pos + 1));
+  }
+
   // índice no arquivo → id real atribuído pelo banco
   const ids: number[] = [];
-  for (const t of templates) {
-    ids.push(await insertTemplate(t));
+  for (let i = 0; i < templates.length; i++) {
+    const t = templates[i];
+    ids.push(await insertTemplate(
+      semOrdem ? { ...t, ordem: ordemPorIndice.get(i) ?? 0 } : t
+    ));
   }
 
   let overrides = 0;
