@@ -8,7 +8,7 @@ import { Template, Tipo, Periodo, Recurrence } from "./types";
 
 const HEADERS = [
   "tipo", "nome", "icone", "valor", "dia",
-  "start_month_key", "periodo", "dist_a", "dist_s", "recurrence", "fixo",
+  "start_month_key", "end_month_key", "periodo", "dist_a", "dist_s", "recurrence", "fixo",
 ];
 
 /** Escapa um campo CSV: aspas duplas e vírgulas exigem envolver em aspas */
@@ -32,6 +32,7 @@ export function templatesToCSV(templates: Template[]): string {
       esc(t.valor),
       esc(t.dia),
       esc(t.startMonthKey),
+      esc(t.endMonthKey),
       esc(t.periodo),
       esc(t.distA),
       esc(t.distS),
@@ -102,6 +103,10 @@ export function csvToTemplates(csv: string): Omit<Template, "id">[] {
       startMonthKey: get("start_month_key") || "",
       recurrence,
     };
+
+    // CSVs exportados antes desta coluna existir simplesmente não a têm
+    const end = get("end_month_key").trim();
+    if (end) base.endMonthKey = end;
 
     if (tipo === "receita") {
       const p = get("periodo");

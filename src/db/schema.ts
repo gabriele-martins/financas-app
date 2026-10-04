@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS templates (
   valor           REAL    NOT NULL DEFAULT 0,
   dia             INTEGER NOT NULL DEFAULT 1,
   start_month_key TEXT    NOT NULL,            -- "2026-06"
+  end_month_key   TEXT,                        -- último mês válido (incl.) ou NULL = sem fim
   recurrence      TEXT,                        -- JSON da Recurrence ou NULL (única vez)
   periodo         TEXT    CHECK (periodo IN ('A','S')),  -- só receita
   dist_a          REAL,                        -- só despesa

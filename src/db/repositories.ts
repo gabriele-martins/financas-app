@@ -19,6 +19,7 @@ interface TemplateRow {
   valor: number;
   dia: number;
   start_month_key: string;
+  end_month_key: string | null;
   recurrence: string | null;
   periodo: string | null;
   dist_a: number | null;
@@ -48,6 +49,7 @@ function rowToTemplate(r: TemplateRow): Template {
     valor: r.valor,
     dia: r.dia,
     startMonthKey: r.start_month_key,
+    endMonthKey: r.end_month_key ?? undefined,
     recurrence: r.recurrence ? (JSON.parse(r.recurrence) as Recurrence) : null,
     periodo: (r.periodo as Periodo) ?? undefined,
     distA: r.dist_a ?? undefined,
@@ -83,8 +85,8 @@ export async function insertTemplate(t: Omit<Template, "id">): Promise<number> {
   const db = await getDb();
   const res = await db.runAsync(
     `INSERT INTO templates
-       (tipo, nome, icone, valor, dia, start_month_key, recurrence, periodo, dist_a, dist_s, fixo)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (tipo, nome, icone, valor, dia, start_month_key, end_month_key, recurrence, periodo, dist_a, dist_s, fixo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       t.tipo ?? "despesa",
       t.nome ?? "",
@@ -92,6 +94,7 @@ export async function insertTemplate(t: Omit<Template, "id">): Promise<number> {
       t.valor ?? 0,
       t.dia ?? 1,
       t.startMonthKey ?? "",
+      t.endMonthKey ?? null,
       t.recurrence ? JSON.stringify(t.recurrence) : null,
       t.periodo ?? null,
       t.distA ?? null,
@@ -107,7 +110,7 @@ export async function updateTemplate(t: Template): Promise<void> {
   await db.runAsync(
     `UPDATE templates SET
        tipo = ?, nome = ?, icone = ?, valor = ?, dia = ?,
-       start_month_key = ?, recurrence = ?, periodo = ?, dist_a = ?, dist_s = ?, fixo = ?
+       start_month_key = ?, end_month_key = ?, recurrence = ?, periodo = ?, dist_a = ?, dist_s = ?, fixo = ?
      WHERE id = ?`,
     [
       t.tipo ?? "despesa",
@@ -116,6 +119,7 @@ export async function updateTemplate(t: Template): Promise<void> {
       t.valor ?? 0,
       t.dia ?? 1,
       t.startMonthKey ?? "",
+      t.endMonthKey ?? null,
       t.recurrence ? JSON.stringify(t.recurrence) : null,
       t.periodo ?? null,
       t.distA ?? null,
@@ -130,6 +134,22 @@ export async function deleteTemplate(id: number): Promise<void> {
   const db = await getDb();
   // ON DELETE CASCADE remove as instâncias relacionadas automaticamente
   await db.runAsync("DELETE FROM templates WHERE id = ?", [id]);
+}
+
+/**
+ * Encerra um template no mês informado (inclusive), sem apagá-lo.
+ * O template deixa de aparecer nos meses seguintes, mas continua
+ * resolvendo normalmente no passado — é o que preserva o histórico.
+ */
+export async function endTemplate(
+  id: number,
+  endMonthKey: string
+): Promise<void> {
+  const db = await getDb();
+  await db.runAsync("UPDATE templates SET end_month_key = ? WHERE id = ?", [
+    endMonthKey ?? null,
+    id,
+  ]);
 }
 
 // ════════════════════════════════════════════════

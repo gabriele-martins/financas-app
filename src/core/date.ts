@@ -38,6 +38,13 @@ export const dayFromIso = (iso: string): number =>
 /** Compara duas monthKeys cronologicamente. "2026-05" < "2026-06" */
 export const isMonthBefore = (a: string, b: string): boolean => a < b;
 
+/** monthKey do mês anterior: "2026-01" → "2025-12" */
+export function prevMonthKey(monthKey: string): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  const { y: py, m: pm } = addMonths(y, m, -1);
+  return mKey(py, pm);
+}
+
 /** Nomes dos meses em pt-BR (índice 0 = Janeiro) */
 export const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",

@@ -11,7 +11,7 @@ import {
   // navegação / UI
   Home01Icon, Menu01Icon, ArrowLeft01Icon, ArrowRight01Icon,
   ArrowDown01Icon, Cancel01Icon, PlusSignIcon, Edit02Icon,
-  DashboardSquare01Icon, LeftToRightListBulletIcon, CheckmarkCircle02Icon,
+  DashboardSquare01Icon, LeftToRightListBulletIcon, CheckmarkCircle02Icon, Delete02Icon,
   ArrowDownRight01Icon, ArrowUpRight01Icon,
   // financeiro / categorias
   Wallet02Icon, CreditCardIcon, PiggyBankIcon, BankIcon, MoneyBag02Icon,
@@ -37,7 +37,7 @@ const MAP = {
   home: Home01Icon, menu: Menu01Icon, chevL: ArrowLeft01Icon, chevR: ArrowRight01Icon,
   chevD: ArrowDown01Icon, close: Cancel01Icon, plus: PlusSignIcon, edit: Edit02Icon,
   grid: DashboardSquare01Icon, list: LeftToRightListBulletIcon, check: CheckmarkCircle02Icon,
-  expense: ArrowUpRight01Icon, income: ArrowDownRight01Icon,
+  expense: ArrowUpRight01Icon, income: ArrowDownRight01Icon, trash: Delete02Icon,
   // categorias selecionáveis (30)
   cash: MoneyBag02Icon, wallet: Wallet02Icon, card: CreditCardIcon, pig: PiggyBankIcon,
   bank: BankIcon, cart: ShoppingCart01Icon, bag: ShoppingBag01Icon, tag: Tag01Icon,

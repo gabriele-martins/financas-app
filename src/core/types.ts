@@ -49,6 +49,13 @@ export interface Template {
   dia: number;                   // dia do vencimento/recebimento (1–31)
   /** mês a partir do qual o template passa a valer: "2026-06" */
   startMonthKey: string;
+  /**
+   * Último mês em que o template vale (inclusive): "2026-11".
+   * Ausente = vale indefinidamente. Usado para "encerrar" um template sem
+   * apagá-lo, preservando o histórico dos meses passados — é o que sustenta
+   * a edição versionada e a exclusão por corte.
+   */
+  endMonthKey?: string;
   recurrence: Recurrence | null;
 
   // Só para receitas:

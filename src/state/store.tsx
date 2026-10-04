@@ -16,6 +16,7 @@ import {
 } from "../core/finance";
 import {
   CUR_YEAR, CUR_MONTH, CUR_MONTH_KEY, mKey, addMonths, isMonthBefore,
+  prevMonthKey,
 } from "../core/date";
 import * as repo from "../db/repositories";
 
@@ -118,36 +119,101 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setTemplates((prev) => [...prev, { ...t, id }]);
   }, []);
 
-  const editarTemplate = useCallback(async (t: Template) => {
-    await repo.updateTemplate(t);
-    await repo.clearFutureInstances(t.id, monthKey);
-    setTemplates((prev) => prev.map((x) => (x.id === t.id ? t : x)));
+  /** Remove, no estado local, os overrides de um template do mês visível em diante */
+  const dropInstancesFrom = useCallback((id: number) => {
     setInstances((prev) => {
       const next: InstanceStore = {};
       for (const mk of Object.keys(prev)) {
-        if (!isMonthBefore(mk, monthKey)) {
-          const { [t.id]: _drop, ...rest } = prev[mk];
-          next[mk] = rest;
-        } else {
+        if (isMonthBefore(mk, monthKey)) {
           next[mk] = prev[mk];
+        } else {
+          const { [id]: _drop, ...rest } = prev[mk];
+          next[mk] = rest;
         }
       }
       return next;
     });
   }, [monthKey]);
 
-  const excluirTemplate = useCallback(async (id: number) => {
-    await repo.deleteTemplate(id);
-    setTemplates((prev) => prev.filter((x) => x.id !== id));
-    setInstances((prev) => {
-      const next: InstanceStore = {};
-      for (const mk of Object.keys(prev)) {
-        const { [id]: _drop, ...rest } = prev[mk];
-        next[mk] = rest;
-      }
-      return next;
+  /**
+   * Edita um template preservando o histórico.
+   *
+   * Se o template já valeu em meses anteriores ao visível, não dá para mutá-lo:
+   * os meses passados derivam do template, então um UPDATE reescreveria o
+   * histórico. Nesse caso fazemos um "split de versão" — encerramos o template
+   * antigo no mês anterior (que continua resolvendo o passado) e criamos um novo
+   * a partir do mês visível com os dados editados.
+   *
+   * Quando não há passado (template nasceu no mês visível, ou é de única vez),
+   * um UPDATE direto é suficiente e mantém o mesmo id.
+   */
+  const editarTemplate = useCallback(async (t: Template) => {
+    if (isPast) return;   // passado é imutável
+    const antigo = templates.find((x) => x.id === t.id);
+    const temPassado =
+      !!antigo && !!antigo.recurrence && isMonthBefore(antigo.startMonthKey, monthKey);
+
+    if (!temPassado) {
+      await repo.updateTemplate(t);
+      await repo.clearFutureInstances(t.id, monthKey);
+      setTemplates((prev) => prev.map((x) => (x.id === t.id ? t : x)));
+      dropInstancesFrom(t.id);
+      return;
+    }
+
+    const corte = prevMonthKey(monthKey);
+    const { id: _oldId, ...dados } = t;
+
+    await repo.endTemplate(t.id, corte);
+    await repo.clearFutureInstances(t.id, monthKey);
+    const novoId = await repo.insertTemplate({
+      ...dados,
+      startMonthKey: monthKey,
+      endMonthKey: undefined,
     });
-  }, []);
+
+    setTemplates((prev) => [
+      ...prev.map((x) => (x.id === t.id ? { ...x, endMonthKey: corte } : x)),
+      { ...dados, startMonthKey: monthKey, endMonthKey: undefined, id: novoId },
+    ]);
+    dropInstancesFrom(t.id);
+  }, [isPast, templates, monthKey, dropInstancesFrom]);
+
+  /**
+   * Exclui um template preservando o histórico.
+   *
+   * Se houve meses anteriores ao visível, só encerramos o template no mês
+   * anterior: ele desaparece do mês visível em diante e segue intacto no
+   * passado. Sem passado, é um DELETE de verdade (nada a preservar).
+   */
+  const excluirTemplate = useCallback(async (id: number) => {
+    if (isPast) return;   // passado é imutável
+    const tpl = templates.find((x) => x.id === id);
+    const temPassado =
+      !!tpl && !!tpl.recurrence && isMonthBefore(tpl.startMonthKey, monthKey);
+
+    if (!temPassado) {
+      await repo.deleteTemplate(id);
+      setTemplates((prev) => prev.filter((x) => x.id !== id));
+      setInstances((prev) => {
+        const next: InstanceStore = {};
+        for (const mk of Object.keys(prev)) {
+          const { [id]: _drop, ...rest } = prev[mk];
+          next[mk] = rest;
+        }
+        return next;
+      });
+      return;
+    }
+
+    const corte = prevMonthKey(monthKey);
+    await repo.endTemplate(id, corte);
+    await repo.clearFutureInstances(id, monthKey);
+    setTemplates((prev) =>
+      prev.map((x) => (x.id === id ? { ...x, endMonthKey: corte } : x))
+    );
+    dropInstancesFrom(id);
+  }, [isPast, templates, monthKey, dropInstancesFrom]);
 
   // ── Ações de instância ──
 
