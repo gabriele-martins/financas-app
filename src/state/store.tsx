@@ -54,6 +54,8 @@ interface StoreValue {
 
   /** move uma despesa uma posição para cima/baixo na ordem manual */
   moverDespesa: (templateId: number, delta: -1 | 1) => Promise<void>;
+  /** grava a ordem final das despesas (usado pelo arrastar) */
+  reordenarDespesas: (idsNaOrdem: number[]) => Promise<void>;
   /** reordena as despesas alfabeticamente por nome */
   ordenarDespesasAZ: () => Promise<void>;
 
@@ -351,7 +353,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     despesas, receitas, totais,
     criarTemplate, editarTemplate, excluirTemplate,
     editarDistribuicao, alternarPago, editarValorReal, editarValorDespesa,
-    moverDespesa, ordenarDespesasAZ,
+    moverDespesa, reordenarDespesas: aplicarOrdem, ordenarDespesasAZ,
     reload: carregar,
   };
 

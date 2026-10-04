@@ -5,6 +5,8 @@
 
 import React, { useState } from "react";
 import { View, Text, ScrollView, Pressable, LayoutAnimation, StyleSheet } from "react-native";
+import DraggableFlatList, { RenderItemParams } from "react-native-draggable-flatlist";
+import { DespesaResolvida } from "../core/types";
 import { useTheme } from "../theme/ThemeContext";
 import { useStore } from "../state/store";
 import { CardDespesa } from "../components/CardDespesa";
@@ -21,7 +23,7 @@ export function DistribuicaoScreen({ onEditTemplate }: Props) {
   const {
     despesas, totais, isPast, emCarencia, carenciaDias,
     editarDistribuicao, alternarPago, editarValorDespesa,
-    moverDespesa, ordenarDespesasAZ,
+    reordenarDespesas, ordenarDespesasAZ,
   } = useStore();
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [reordenando, setReordenando] = useState(false);
@@ -57,55 +59,69 @@ export function DistribuicaoScreen({ onEditTemplate }: Props) {
         )}
       </View>
 
-      {/* Lista rolável */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={s.list} keyboardShouldPersistTaps="handled">
-        {isPast && (
-          <View style={[s.histBox, { backgroundColor: t.chipA.bg }]}>
-            <Text style={{ fontSize: 11, color: t.chipA.txt }}>
-              Histórico — somente leitura.
-            </Text>
-          </View>
-        )}
+      {reordenando ? (
+        /* Modo reordenar: segure uma linha e arraste para a posição */
+        <DraggableFlatList
+          data={despesas}
+          keyExtractor={(d) => String(d.id)}
+          containerStyle={{ flex: 1 }}
+          contentContainerStyle={s.list}
+          onDragEnd={({ data }) => reordenarDespesas(data.map((d) => d.id))}
+          ListHeaderComponent={
+            <View style={[s.histBox, { backgroundColor: t.chipA.bg }]}>
+              <Text style={{ fontSize: 11, color: t.chipA.txt }}>
+                Segure uma despesa e arraste para mudar a ordem.
+              </Text>
+            </View>
+          }
+          renderItem={({ item, drag, isActive }: RenderItemParams<DespesaResolvida>) => (
+            <Pressable
+              onLongPress={drag}
+              delayLongPress={150}
+              style={[s.reordRow, {
+                backgroundColor: isActive ? t.surfaceAlt : t.surface,
+                borderColor: isActive ? t.accent : t.border,
+              }]}>
+              <Icon name={item.icone} size={18} color={t.txtSub} />
+              <Text numberOfLines={1} style={[s.reordNome, { color: t.txt }]}>{item.nome}</Text>
+              <Text style={{ fontSize: 16, color: t.txtHint, letterSpacing: 2 }}>≡</Text>
+            </Pressable>
+          )}
+        />
+      ) : (
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={s.list} keyboardShouldPersistTaps="handled">
+          {isPast && (
+            <View style={[s.histBox, { backgroundColor: t.chipA.bg }]}>
+              <Text style={{ fontSize: 11, color: t.chipA.txt }}>
+                Histórico — somente leitura.
+              </Text>
+            </View>
+          )}
 
-        {emCarencia && (
-          <View style={[s.histBox, { backgroundColor: t.warnBg }]}>
-            <Text style={{ fontSize: 11, color: t.warn }}>
-              Mês anterior, ainda editável até o dia {carenciaDias}. Alterações aqui
-              valem deste mês em diante.
-            </Text>
-          </View>
-        )}
+          {emCarencia && (
+            <View style={[s.histBox, { backgroundColor: t.warnBg }]}>
+              <Text style={{ fontSize: 11, color: t.warn }}>
+                Mês anterior, ainda editável até o dia {carenciaDias}. Alterações aqui
+                valem deste mês em diante.
+              </Text>
+            </View>
+          )}
 
-        {reordenando
-          ? despesas.map((d, i) => (
-              <View key={d.id}
-                style={[s.reordRow, { backgroundColor: t.surface, borderColor: t.border }]}>
-                <Icon name={d.icone} size={18} color={t.txtSub} />
-                <Text numberOfLines={1} style={[s.reordNome, { color: t.txt }]}>{d.nome}</Text>
-                <Pressable onPress={() => moverDespesa(d.id, -1)} disabled={i === 0}
-                  style={[s.setaBtn, { borderColor: t.border, opacity: i === 0 ? 0.3 : 1 }]}>
-                  <Text style={{ fontSize: 15, color: t.accent, lineHeight: 18 }}>↑</Text>
-                </Pressable>
-                <Pressable onPress={() => moverDespesa(d.id, 1)} disabled={i === despesas.length - 1}
-                  style={[s.setaBtn, { borderColor: t.border, opacity: i === despesas.length - 1 ? 0.3 : 1 }]}>
-                  <Text style={{ fontSize: 15, color: t.accent, lineHeight: 18 }}>↓</Text>
-                </Pressable>
-              </View>
-            ))
-          : despesas.map((d) => (
-              <CardDespesa
-                key={d.id}
-                despesa={d}
-                expanded={expandedId === d.id}
-                isPast={isPast}
-                onToggle={() => setExpandedId(expandedId === d.id ? null : d.id)}
-                onEditDist={(lado, v) => editarDistribuicao(d.id, lado, v)}
-                onTogglePago={(campo) => alternarPago(d.id, campo)}
-                onEditValor={(v) => editarValorDespesa(d.id, v)}
-                onEditTemplate={() => onEditTemplate(d.id)}
-              />
-            ))}
-      </ScrollView>
+          {despesas.map((d) => (
+            <CardDespesa
+              key={d.id}
+              despesa={d}
+              expanded={expandedId === d.id}
+              isPast={isPast}
+              onToggle={() => setExpandedId(expandedId === d.id ? null : d.id)}
+              onEditDist={(lado, v) => editarDistribuicao(d.id, lado, v)}
+              onTogglePago={(campo) => alternarPago(d.id, campo)}
+              onEditValor={(v) => editarValorDespesa(d.id, v)}
+              onEditTemplate={() => onEditTemplate(d.id)}
+            />
+          ))}
+        </ScrollView>
+      )}
 
       {/* Total fixo */}
       <View style={s.totalWrap}>
@@ -132,10 +148,6 @@ const s = StyleSheet.create({
     borderWidth: 1, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 6,
   },
   reordNome: { flex: 1, fontSize: 13, fontWeight: "500" },
-  setaBtn: {
-    width: 32, height: 32, borderRadius: 8, borderWidth: 1,
-    alignItems: "center", justifyContent: "center",
-  },
   list: { paddingHorizontal: 12, paddingBottom: 12 },
   histBox: { borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 12 },
   totalWrap: { paddingHorizontal: 12, paddingTop: 8, paddingBottom: 12 },
