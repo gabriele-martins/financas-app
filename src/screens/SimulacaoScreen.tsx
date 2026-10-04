@@ -58,7 +58,9 @@ export function SimulacaoScreen() {
     setSelecionados(
       new Set(
         visiveis
-          .filter((d) => (mostraA && d.distA > 0 && !d.pagoA) || (mostraS && d.distS > 0 && !d.pagoS))
+          .filter((d) =>
+            (mostraA && d.distA > 0 && d.statusA === "pendente") ||
+            (mostraS && d.distS > 0 && d.statusS === "pendente"))
           .map((d) => d.id)
       )
     );

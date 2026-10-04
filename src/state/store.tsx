@@ -9,14 +9,14 @@ import React, {
 } from "react";
 import {
   Template, InstanceStore, InstanceOverride, DespesaResolvida,
-  ReceitaResolvida,
+  ReceitaResolvida, StatusPag,
 } from "../core/types";
 import {
   resolveDespesas, resolveReceitas, calcTotais, redistribuir, Totais,
 } from "../core/finance";
 import {
-  CUR_YEAR, CUR_MONTH, CUR_MONTH_KEY, mKey, addMonths, isMonthBefore,
-  prevMonthKey,
+  CUR_YEAR, CUR_MONTH, mKey, addMonths, isMonthBefore,
+  prevMonthKey, isReadOnlyMonth, CARENCIA_PADRAO,
 } from "../core/date";
 import * as repo from "../db/repositories";
 
@@ -31,6 +31,12 @@ interface StoreValue {
   isPast: boolean;
   goMonth: (delta: number) => void;
 
+  /** dias do mês atual em que o mês anterior segue editável */
+  carenciaDias: number;
+  setCarenciaDias: (dias: number) => Promise<void>;
+  /** true quando o mês visível só está editável por causa da carência */
+  emCarencia: boolean;
+
   despesas: DespesaResolvida[];
   receitas: ReceitaResolvida[];
   templates: Template[];
@@ -41,7 +47,8 @@ interface StoreValue {
   excluirTemplate: (id: number) => Promise<void>;
 
   editarDistribuicao: (templateId: number, lado: "distA" | "distS", valor: number) => Promise<void>;
-  alternarPago: (templateId: number, campo: "pagoA" | "pagoS") => Promise<void>;
+  /** avança pendente → guardado → pago → pendente no período indicado */
+  alternarPago: (templateId: number, lado: "A" | "S") => Promise<void>;
   editarValorReal: (templateId: number, valor: number) => Promise<void>;
   editarValorDespesa: (templateId: number, valor: number) => Promise<void>;
 
@@ -56,18 +63,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [instances, setInstances] = useState<InstanceStore>({});
   const [viewY, setViewY] = useState(CUR_YEAR);
   const [viewM, setViewM] = useState(CUR_MONTH);
+  const [carenciaDias, setCarencia] = useState(CARENCIA_PADRAO);
 
   const monthKey = mKey(viewY, viewM);
-  const isPast = isMonthBefore(monthKey, CUR_MONTH_KEY);
+  const isPast = isReadOnlyMonth(monthKey, carenciaDias);
+  // mês já passado, mas ainda editável pela janela de carência
+  const emCarencia = isMonthBefore(monthKey, mKey(CUR_YEAR, CUR_MONTH)) && !isPast;
 
   // ── Carga / recarga do banco ──
   const carregar = useCallback(async () => {
-    const [tpls, insts] = await Promise.all([
+    const [tpls, insts, carencia] = await Promise.all([
       repo.getAllTemplates(),
       repo.getAllInstances(),
+      repo.getSetting("carenciaDias"),
     ]);
     setTemplates(tpls);
     setInstances(insts);
+    const n = carencia != null ? parseInt(carencia, 10) : NaN;
+    setCarencia(isNaN(n) ? CARENCIA_PADRAO : Math.max(0, Math.min(28, n)));
+  }, []);
+
+  const setCarenciaDias = useCallback(async (dias: number) => {
+    const v = Math.max(0, Math.min(28, Math.round(dias)));
+    await repo.setSetting("carenciaDias", String(v));
+    setCarencia(v);
   }, []);
 
   useEffect(() => {
@@ -228,12 +247,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [isPast, despesas, applyOverride]
   );
 
+  /**
+   * Avança o status de um período da despesa no ciclo
+   * pendente → guardado → pago → pendente.
+   */
   const alternarPago = useCallback(
-    async (templateId: number, campo: "pagoA" | "pagoS") => {
+    async (templateId: number, lado: "A" | "S") => {
       if (isPast) return;
       const d = despesas.find((x) => x.id === templateId);
       if (!d) return;
-      await applyOverride(templateId, { [campo]: !d[campo] });
+
+      const atual = lado === "A" ? d.statusA : d.statusS;
+      const proximo: StatusPag =
+        atual === "pendente" ? "guardado" : atual === "guardado" ? "pago" : "pendente";
+
+      await applyOverride(templateId, {
+        [`pago${lado}`]: proximo === "pago",
+        [`guardado${lado}`]: proximo === "guardado",
+      });
     },
     [isPast, despesas, applyOverride]
   );
@@ -262,6 +293,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const value: StoreValue = {
     loading,
     viewY, viewM, monthKey, isPast, goMonth,
+    carenciaDias, setCarenciaDias, emCarencia,
     templates,
     despesas, receitas, totais,
     criarTemplate, editarTemplate, excluirTemplate,

@@ -81,7 +81,19 @@ export interface InstanceOverride {
   distS?: number;
   pagoA?: boolean;
   pagoS?: boolean;
+  /** dinheiro separado, conta ainda não paga (ver StatusPag) */
+  guardadoA?: boolean;
+  guardadoS?: boolean;
 }
+
+/**
+ * Status de uma despesa num período, no ciclo pendente → guardado → pago.
+ *
+ * Guardado e pago contam igual nos totais (ambos são dinheiro já comprometido);
+ * a diferença é só se o boleto já foi quitado. Derivado dos booleanos acima —
+ * `pago` vence sobre `guardado` se ambos estiverem marcados.
+ */
+export type StatusPag = "pendente" | "guardado" | "pago";
 
 /** instances[monthKey][templateId] = override */
 export type InstanceStore = Record<string, Record<number, InstanceOverride>>;
@@ -94,6 +106,11 @@ export interface DespesaResolvida extends Template {
   distS: number;
   pagoA: boolean;
   pagoS: boolean;
+  guardadoA: boolean;
+  guardadoS: boolean;
+  /** derivados dos booleanos acima — é o que a UI usa */
+  statusA: StatusPag;
+  statusS: StatusPag;
   fixo: boolean;
 }
 

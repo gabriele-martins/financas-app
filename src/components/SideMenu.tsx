@@ -7,8 +7,9 @@ import React, { useState } from "react";
 import { Modal, View, Text, Pressable, StyleSheet, StatusBar, Platform, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../theme/ThemeContext";
+import { useStore } from "../state/store";
 import { Icon } from "./Icon";
-import { exportarCSV, importarCSV } from "../db/backup";
+import { exportarBackup, importarBackup } from "../db/backup";
 import { resetDatabase } from "../db/database";
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
 
 export function SideMenu({ visible, onClose, onDataChanged }: Props) {
   const { t, mode, toggle } = useTheme();
+  const { carenciaDias, setCarenciaDias } = useStore();
   const insets = useSafeAreaInsets();
   const dark = mode === "dark";
   const [busy, setBusy] = useState(false);
@@ -30,7 +32,7 @@ export function SideMenu({ visible, onClose, onDataChanged }: Props) {
   const handleExport = async () => {
     try {
       setBusy(true);
-      await exportarCSV();
+      await exportarBackup();
     } catch (e: any) {
       Alert.alert("Erro ao exportar", e?.message ?? "Tente novamente.");
     } finally {
@@ -38,20 +40,42 @@ export function SideMenu({ visible, onClose, onDataChanged }: Props) {
     }
   };
 
-  const handleImport = async () => {
+  const executarImport = async (substituir: boolean) => {
     try {
       setBusy(true);
-      const n = await importarCSV();
-      if (n > 0) {
-        onDataChanged?.();
-        Alert.alert("Importação concluída", `${n} ${n === 1 ? "item importado" : "itens importados"}.`);
-        onClose();
+      const r = await importarBackup(substituir);
+      if (!r.importado) return;
+
+      onDataChanged?.();
+      const partes = [`${r.contas} ${r.contas === 1 ? "conta" : "contas"}`];
+      if (r.overrides > 0) {
+        partes.push(`${r.overrides} ${r.overrides === 1 ? "ajuste" : "ajustes"} de histórico`);
       }
+      const resumo = partes.join(" e ") + ".";
+      Alert.alert(
+        "Importação concluída",
+        r.semHistorico
+          ? `${resumo}\n\nO arquivo era um CSV antigo, que não guarda histórico — pagamentos e valores por mês não vieram.`
+          : resumo
+      );
+      onClose();
     } catch (e: any) {
-      Alert.alert("Erro ao importar", e?.message ?? "Verifique o arquivo CSV.");
+      Alert.alert("Erro ao importar", e?.message ?? "Verifique o arquivo.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleImport = () => {
+    Alert.alert(
+      "Importar backup",
+      "Substituir apaga as contas e o histórico atuais e restaura o arquivo no lugar. Adicionar mantém o que existe e insere o conteúdo do arquivo junto.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Adicionar", onPress: () => executarImport(false) },
+        { text: "Substituir", style: "destructive", onPress: () => executarImport(true) },
+      ]
+    );
   };
 
   const handleReset = () => {
@@ -111,17 +135,44 @@ export function SideMenu({ visible, onClose, onDataChanged }: Props) {
             </Pressable>
           </View>
 
+          {/* Carência para editar o mês anterior */}
+          <View style={[s.row, { borderBottomColor: t.border }]}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: t.txt }}>Editar mês anterior</Text>
+              <Text style={{ fontSize: 11, color: t.txtHint }}>
+                {carenciaDias === 0
+                  ? "Trava assim que o mês vira"
+                  : `Até o dia ${carenciaDias} do mês seguinte`}
+              </Text>
+            </View>
+            <View style={s.stepper}>
+              <Pressable onPress={() => setCarenciaDias(carenciaDias - 1)}
+                disabled={carenciaDias <= 0}
+                style={[s.stepBtn, { borderColor: t.border, opacity: carenciaDias <= 0 ? 0.4 : 1 }]}>
+                <Text style={{ fontSize: 16, color: t.accent }}>−</Text>
+              </Pressable>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: t.txt, minWidth: 22, textAlign: "center" }}>
+                {carenciaDias}
+              </Text>
+              <Pressable onPress={() => setCarenciaDias(carenciaDias + 1)}
+                disabled={carenciaDias >= 28}
+                style={[s.stepBtn, { borderColor: t.border, opacity: carenciaDias >= 28 ? 0.4 : 1 }]}>
+                <Text style={{ fontSize: 16, color: t.accent }}>+</Text>
+              </Pressable>
+            </View>
+          </View>
+
           {/* Backup */}
           <Text style={[s.section, { color: t.txtHint }]}>BACKUP</Text>
           <Pressable onPress={handleExport} disabled={busy}
             style={[s.action, { opacity: busy ? 0.5 : 1 }]}>
             <Icon name="card" size={18} color={t.accent} />
-            <Text style={{ fontSize: 14, color: t.txt }}>Exportar CSV</Text>
+            <Text style={{ fontSize: 14, color: t.txt }}>Exportar backup</Text>
           </Pressable>
           <Pressable onPress={handleImport} disabled={busy}
             style={[s.action, { opacity: busy ? 0.5 : 1 }]}>
             <Icon name="wallet" size={18} color={t.accent} />
-            <Text style={{ fontSize: 14, color: t.txt }}>Importar CSV</Text>
+            <Text style={{ fontSize: 14, color: t.txt }}>Importar backup</Text>
           </Pressable>
 
           {/* Zona de perigo */}
@@ -145,6 +196,8 @@ const s = StyleSheet.create({
   panel: { width: 260, height: "100%", borderLeftWidth: 1, paddingHorizontal: 24 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1 },
+  stepper: { flexDirection: "row", alignItems: "center", gap: 6 },
+  stepBtn: { width: 28, height: 28, borderRadius: 8, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   switch: { width: 48, height: 26, borderRadius: 13, justifyContent: "center" },
   knob: { position: "absolute", top: 3, width: 20, height: 20, borderRadius: 10, backgroundColor: "#fff" },
   section: { fontSize: 11, fontWeight: "700", marginTop: 20, marginBottom: 8, letterSpacing: 0.5 },

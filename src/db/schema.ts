@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS instances (
   dist_s      REAL,
   pago_a      INTEGER,                         -- 0/1 (SQLite não tem boolean)
   pago_s      INTEGER,                         -- 0/1
+  guardado_a  INTEGER,                         -- 0/1: separado, ainda não pago
+  guardado_s  INTEGER,                         -- 0/1
   PRIMARY KEY (month_key, template_id),
   FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
 );

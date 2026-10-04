@@ -45,6 +45,31 @@ export function prevMonthKey(monthKey: string): string {
   return mKey(py, pm);
 }
 
+/** Carência padrão: o mês anterior segue editável até o dia 10 do atual */
+export const CARENCIA_PADRAO = 10;
+
+/**
+ * O mês `monthKey` é passado imutável (somente leitura)?
+ *
+ * Meses futuros e o corrente nunca são. O mês imediatamente anterior
+ * continua editável enquanto o dia de hoje for <= `carenciaDias`, porque as
+ * contas de um mês só se fecham de fato no começo do seguinte. Meses mais
+ * antigos que esse são sempre imutáveis.
+ */
+export function isReadOnlyMonth(
+  monthKey: string,
+  carenciaDias: number,
+  hoje: Date = now
+): boolean {
+  const hojeKey = mKey(hoje.getFullYear(), hoje.getMonth() + 1);
+  if (!isMonthBefore(monthKey, hojeKey)) return false;        // atual ou futuro
+
+  const dentroDaJanela =
+    monthKey === prevMonthKey(hojeKey) && hoje.getDate() <= carenciaDias;
+
+  return !dentroDaJanela;
+}
+
 /** Nomes dos meses em pt-BR (índice 0 = Janeiro) */
 export const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",

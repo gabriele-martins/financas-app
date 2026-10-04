@@ -17,7 +17,7 @@ interface Props {
 
 export function DistribuicaoScreen({ onEditTemplate }: Props) {
   const { t } = useTheme();
-  const { despesas, totais, isPast, editarDistribuicao, alternarPago, editarValorDespesa } = useStore();
+  const { despesas, totais, isPast, emCarencia, carenciaDias, editarDistribuicao, alternarPago, editarValorDespesa } = useStore();
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   return (
@@ -30,6 +30,15 @@ export function DistribuicaoScreen({ onEditTemplate }: Props) {
           <View style={[s.histBox, { backgroundColor: t.chipA.bg }]}>
             <Text style={{ fontSize: 11, color: t.chipA.txt }}>
               Histórico — somente leitura.
+            </Text>
+          </View>
+        )}
+
+        {emCarencia && (
+          <View style={[s.histBox, { backgroundColor: t.warnBg }]}>
+            <Text style={{ fontSize: 11, color: t.warn }}>
+              Mês anterior, ainda editável até o dia {carenciaDias}. Alterações aqui
+              valem deste mês em diante.
             </Text>
           </View>
         )}

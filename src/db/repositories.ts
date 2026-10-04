@@ -36,6 +36,8 @@ interface InstanceRow {
   dist_s: number | null;
   pago_a: number | null;
   pago_s: number | null;
+  guardado_a: number | null;
+  guardado_s: number | null;
 }
 
 // ── Mapeamento linha → domínio ──
@@ -66,6 +68,8 @@ function rowToOverride(r: InstanceRow): InstanceOverride {
   if (r.dist_s != null) o.distS = r.dist_s;
   if (r.pago_a != null) o.pagoA = r.pago_a === 1;
   if (r.pago_s != null) o.pagoS = r.pago_s === 1;
+  if (r.guardado_a != null) o.guardadoA = r.guardado_a === 1;
+  if (r.guardado_s != null) o.guardadoS = r.guardado_s === 1;
   return o;
 }
 
@@ -191,8 +195,8 @@ export async function upsertInstance(
 
   await db.runAsync(
     `INSERT OR REPLACE INTO instances
-       (month_key, template_id, valor, valor_real, dist_a, dist_s, pago_a, pago_s)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (month_key, template_id, valor, valor_real, dist_a, dist_s, pago_a, pago_s, guardado_a, guardado_s)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       monthKey,
       templateId,
@@ -202,6 +206,8 @@ export async function upsertInstance(
       merged.distS ?? null,
       b(merged.pagoA),
       b(merged.pagoS),
+      b(merged.guardadoA),
+      b(merged.guardadoS),
     ]
   );
 }
@@ -220,6 +226,17 @@ export async function clearFutureInstances(
     "DELETE FROM instances WHERE template_id = ? AND month_key >= ?",
     [templateId, fromMonthKey]
   );
+}
+
+/**
+ * Apaga todos os templates e instâncias (settings/tema são preservados).
+ * Usado na importação em modo "substituir tudo".
+ */
+export async function limparDados(): Promise<void> {
+  const db = await getDb();
+  // Sem transação: ver nota no CLAUDE.md — transação mascarava o erro real.
+  await db.runAsync("DELETE FROM instances");
+  await db.runAsync("DELETE FROM templates");
 }
 
 // ════════════════════════════════════════════════
